@@ -29,7 +29,6 @@ class gssapi_client_t ZMQ_FINAL : public gssapi_mechanism_base_t
     enum state_t
     {
         call_next_init,
-        send_next_token,
         recv_next_token,
         send_ready,
         recv_ready,

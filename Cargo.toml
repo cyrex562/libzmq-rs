@@ -1,0 +1,12 @@
+[dependencies]
+libc = "0.2"
+sodiumoxide = "0.2"
+backtrace = "0.3"
+
+# For Windows support
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["profileapi", "sysinfoapi","errhandlingapi", "winerror"] }
+
+# For macOS support
+[target.'cfg(target_os = "macos")'.dependencies]
+mach = "0.3"
