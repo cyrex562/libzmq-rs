@@ -1,123 +1,123 @@
-use std::cmp;
+use std::cmp::min;
 
-// Trait to define the encoder interface
-pub trait EncoderStep {
-    fn next_step(&mut self);
-}
+// Constants from v2_protocol
+const MORE_FLAG: u8 = 0x1;
+const LARGE_FLAG: u8 = 0x2;
+const COMMAND_FLAG: u8 = 0x4;
 
-#[derive(Debug)]
-pub struct Msg {
-    // Message implementation details would go here
+// Message type equivalent
+struct Msg {
+    data: Vec<u8>,
+    flags: u32,
 }
 
 impl Msg {
-    pub fn close(&mut self) -> Result<(), &'static str> {
-        Ok(()) // Implementation details
+    fn size(&self) -> usize {
+        self.data.len()
     }
 
-    pub fn init(&mut self) -> Result<(), &'static str> {
-        Ok(()) // Implementation details
+    fn flags(&self) -> u32 {
+        self.flags
+    }
+
+    fn is_subscribe(&self) -> bool {
+        // Implementation depends on how subscribe messages are marked
+        false
+    }
+
+    fn is_cancel(&self) -> bool {
+        // Implementation depends on how cancel messages are marked
+        false
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.data
     }
 }
 
-pub struct EncoderBase<T: EncoderStep> {
-    write_pos: Vec<u8>,
-    write_offset: usize,
-    to_write: usize,
-    next: Option<fn(&mut T)>,
-    new_msg_flag: bool,
+pub struct V2Encoder {
+    tmp_buf: [u8; 10],  // flags byte + size byte (or 8 bytes) + sub/cancel byte
+    buffer: Vec<u8>,
     buf_size: usize,
-    buf: Vec<u8>,
     in_progress: Option<Msg>,
+    next_step: fn(&mut V2Encoder),
+    write_pos: usize,
 }
 
-impl<T: EncoderStep> EncoderBase<T> {
+impl V2Encoder {
     pub fn new(bufsize: usize) -> Self {
-        Self {
-            write_pos: Vec::new(),
-            write_offset: 0,
-            to_write: 0,
-            next: None,
-            new_msg_flag: false,
+        let mut encoder = V2Encoder {
+            tmp_buf: [0; 10],
+            buffer: vec![0; bufsize],
             buf_size: bufsize,
-            buf: vec![0; bufsize],
             in_progress: None,
-        }
-    }
-
-    pub fn encode(&mut self, data: Option<&mut Vec<u8>>) -> usize {
-        let buffer = match data {
-            Some(d) => d,
-            None => &mut self.buf,
+            next_step: Self::message_ready,
+            write_pos: 0,
         };
-        let buffersize = buffer.len();
+        encoder.next_step = Self::message_ready;
+        encoder
+    }
 
-        if self.in_progress.is_none() {
-            return 0;
+    fn next_step(&mut self, data: Option<&[u8]>, size: usize, next: fn(&mut V2Encoder), copy_msg: bool) {
+        if let Some(data) = data {
+            let to_copy = min(size, self.buf_size - self.write_pos);
+            self.buffer[self.write_pos..self.write_pos + to_copy]
+                .copy_from_slice(&data[..to_copy]);
+            self.write_pos += to_copy;
         }
+        self.next_step = next;
+        if copy_msg {
+            self.in_progress = None;
+        }
+    }
 
-        let mut pos = 0;
-        while pos < buffersize {
-            if self.to_write == 0 {
-                if self.new_msg_flag {
-                    if let Some(msg) = self.in_progress.as_mut() {
-                        msg.close().expect("Failed to close message");
-                        msg.init().expect("Failed to init message");
-                    }
-                    self.in_progress = None;
-                    break;
-                }
-                // Call the next step implementation
-                if let Some(next_fn) = self.next {
-                    next_fn(unsafe { &mut *(self as *mut _ as *mut T) });
-                }
+    fn message_ready(&mut self) {
+        if let Some(msg) = &self.in_progress {
+            let mut size = msg.size();
+            let mut header_size = 2; // flags byte + size byte
+            
+            // Encode flags
+            let mut protocol_flags = 0u8;
+            if msg.flags() & 1 != 0 { // MORE flag
+                protocol_flags |= MORE_FLAG;
+            }
+            if msg.size() > u8::MAX as usize {
+                protocol_flags |= LARGE_FLAG;
+            }
+            if msg.flags() & 4 != 0 { // COMMAND flag
+                protocol_flags |= COMMAND_FLAG;
+            }
+            
+            self.tmp_buf[0] = protocol_flags;
+
+            if msg.is_subscribe() || msg.is_cancel() {
+                size += 1;
             }
 
-            // Zero-copy optimization for large messages
-            if pos == 0 && data.is_none() && self.to_write >= buffersize {
-                buffer.copy_from_slice(&self.write_pos[self.write_offset..self.write_offset + self.to_write]);
-                pos = self.to_write;
-                self.write_offset = 0;
-                self.to_write = 0;
-                return pos;
+            // Encode message length
+            if size > u8::MAX as usize {
+                self.tmp_buf[1..9].copy_from_slice(&(size as u64).to_be_bytes());
+                header_size = 9;
+            } else {
+                self.tmp_buf[1] = size as u8;
             }
 
-            // Copy data to the buffer
-            let to_copy = cmp::min(self.to_write, buffersize - pos);
-            buffer[pos..pos + to_copy].copy_from_slice(
-                &self.write_pos[self.write_offset..self.write_offset + to_copy]
-            );
-            pos += to_copy;
-            self.write_offset += to_copy;
-            self.to_write -= to_copy;
-        }
+            // Encode subscribe/cancel byte
+            if msg.is_subscribe() {
+                self.tmp_buf[header_size] = 1;
+                header_size += 1;
+            } else if msg.is_cancel() {
+                self.tmp_buf[header_size] = 0;
+                header_size += 1;
+            }
 
-        pos
-    }
-
-    pub fn load_msg(&mut self, msg: Msg) {
-        assert!(self.in_progress.is_none());
-        self.in_progress = Some(msg);
-        if let Some(next_fn) = self.next {
-            next_fn(unsafe { &mut *(self as *mut _ as *mut T) });
+            self.next_step(Some(&self.tmp_buf[..header_size]), header_size, Self::size_ready, false);
         }
     }
 
-    pub fn next_step(
-        &mut self,
-        write_pos: Vec<u8>,
-        to_write: usize,
-        next: Option<fn(&mut T)>,
-        new_msg_flag: bool,
-    ) {
-        self.write_pos = write_pos;
-        self.write_offset = 0;
-        self.to_write = to_write;
-        self.next = next;
-        self.new_msg_flag = new_msg_flag;
-    }
-
-    pub fn in_progress(&self) -> Option<&Msg> {
-        self.in_progress.as_ref()
+    fn size_ready(&mut self) {
+        if let Some(msg) = &self.in_progress {
+            self.next_step(Some(msg.data()), msg.size(), Self::message_ready, true);
+        }
     }
 }
