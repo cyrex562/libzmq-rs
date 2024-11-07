@@ -6,9 +6,9 @@ edition = "2021"
 license = "MPL-2.0"
 
 [lib]
-# name = "libzmq_rs"
+name = "libzmq_rs"
 crate-type = ["staticlib"]
-path = "src/zmq.rs"
+path = "src/lib.rs"
 
 [dependencies]
 libc = "0.2"
