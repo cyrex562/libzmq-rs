@@ -1,3 +1,15 @@
+[package]
+name = "libzmq_rs"
+version = "0.1.0"
+authors = ["Josh Madden <cyrex562@gmail.com>"]
+edition = "2021"
+license = "MPL-2.0"
+
+[lib]
+# name = "libzmq_rs"
+crate-type = ["staticlib"]
+path = "src/zmq.rs"
+
 [dependencies]
 libc = "0.2"
 sodiumoxide = "0.2"
@@ -6,6 +18,8 @@ backtrace = "0.3"
 # For Windows support
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["profileapi", "sysinfoapi","errhandlingapi", "winerror"] }
+windows-sys = { version = "0.48", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_System_IO"] }
+windows = "0.48"
 
 # For macOS support
 [target.'cfg(target_os = "macos")'.dependencies]
@@ -13,3 +27,4 @@ mach = "0.3"
 
 [dev-dependencies]
 hex = "0.4"
+
