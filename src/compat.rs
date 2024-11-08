@@ -6,14 +6,14 @@ pub use unix_compat::*;
 
 #[cfg(target_os = "windows")]
 mod windows_compat {
-    pub fn strcasecmp(s1: &str, s2: &str) -> i32 {
-        s1.to_lowercase().cmp(&s2.to_lowercase()) as i32
-    }
+    // pub fn strcasecmp(s1: &str, s2: &str) -> i32 {
+    //     s1.to_lowercase().cmp(&s2.to_lowercase()) as i32
+    // }
 
     // Rust's split is already thread-safe, but we provide this for compatibility
-    pub fn strtok_r<'a>(s: &'a str, delim: &str) -> impl Iterator<Item = &'a str> {
-        s.split(delim)
-    }
+    // pub fn strtok_r<'a>(s: &'a str, delim: &str) -> impl Iterator<Item = &'a str> {
+    //     s.split(delim)
+    // }
 }
 
 #[cfg(not(target_os = "windows"))]

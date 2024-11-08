@@ -5,6 +5,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use crate::ctx::Ctx;
 
 // Type aliases
 type ZmqResult<T> = Result<T, i32>; // Using i32 for errno compatibility
@@ -44,12 +45,12 @@ pub struct SocketOptions {
 }
 
 pub struct SocketBase {
-    options: SocketOptions,
-    mailbox: Option<Mailbox>,
-    pipes: Vec<Pipe>,
-    endpoints: HashMap<String, Endpoint>,
-    monitor_socket: Option<Box<dyn SocketBehavior>>,
-    monitor_events: u64,
+    pub options: SocketOptions,
+    pub mailbox: Option<Mailbox>,
+    pub pipes: Vec<Pipe>,
+    pub endpoints: HashMap<String, Endpoint>,
+    pub monitor_socket: Option<Box<dyn SocketBehavior>>,
+    pub monitor_events: u64,
     thread_safe: bool,
     tag: u32,
     ctx_terminated: bool,
@@ -58,7 +59,7 @@ pub struct SocketBase {
 }
 
 impl SocketBase {
-    pub fn new(ctx: &Context, tid: u32, sid: i32, thread_safe: bool) -> Self {
+    pub fn new(ctx: &Ctx, tid: u32, sid: i32, thread_safe: bool) -> Self {
         let mut socket = SocketBase {
             options: SocketOptions::default(),
             mailbox: None,

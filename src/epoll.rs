@@ -1,8 +1,9 @@
-use std::os::unix::io::{AsRawFd, RawFd};
+use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLLERR, EPOLLHUP, EPOLLIN, EPOLLOUT, EPOLL_CLOEXEC};
+use libc::{EPOLL_CTL_ADD, EPOLL_CTL_DEL, EPOLL_CTL_MOD};
 use std::collections::VecDeque;
-use std::ptr;
-use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLL_CLOEXEC, EPOLLIN, EPOLLOUT, EPOLLERR, EPOLLHUP};
-use libc::{EPOLL_CTL_ADD, EPOLL_CTL_MOD, EPOLL_CTL_DEL};
+
+use std::os::unix::io::{AsRawFd, RawFd};
+use crate::wepoll::EPOLL_CTL_MOD;
 
 const MAX_IO_EVENTS: usize = 128;
 const RETIRED_FD: RawFd = -1;
@@ -185,6 +186,5 @@ impl Drop for Epoll {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     // Add tests here
 }

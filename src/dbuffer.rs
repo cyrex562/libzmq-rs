@@ -1,20 +1,20 @@
 use std::sync::Mutex;
-
+use crate::msg::Msg;
 // Message type similar to the C++ msg_t
-#[derive(Clone)]
-pub struct Message {
-    // Implementation details omitted for brevity
-}
+// #[derive(Clone)]
+// pub struct Message {
+//     // Implementation details omitted for brevity
+// }
 
-impl Message {
-    fn new() -> Self {
-        Message { /* initialization */ }
-    }
-
-    fn check(&self) -> bool {
-        true // Implement actual checking logic
-    }
-}
+// impl Message {
+//     fn new() -> Self {
+//         Message { /* initialization */ }
+//     }
+// 
+//     fn check(&self) -> bool {
+//         true // Implement actual checking logic
+//     }
+// }
 
 // Generic double buffer implementation
 pub struct DBuffer<T> {
@@ -73,12 +73,12 @@ impl<T: Clone> DBuffer<T> {
 }
 
 // Specific implementation for Message type
-impl DBuffer<Message> {
+impl DBuffer<Msg> {
     pub fn new_message_buffer() -> Self {
-        Self::new(Message::new())
+        Self::new(Msg::new())
     }
 
-    pub fn write_message(&mut self, msg: Message) {
+    pub fn write_message(&mut self, msg: Msg) {
         assert!(msg.check());
         self.write(msg);
     }

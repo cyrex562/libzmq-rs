@@ -93,7 +93,7 @@ impl ThreadContext {
 }
 
 // Main context
-pub struct Context {
+pub struct Ctx {
     tag: u32,
     starting: AtomicBool,
     terminating: AtomicBool,
@@ -122,9 +122,9 @@ pub struct Context {
     thread_ctx: ThreadContext,
 }
 
-impl Context {
+impl Ctx {
     pub fn new() -> Self {
-        Context {
+        Ctx {
             tag: ZMQ_CTX_TAG_VALUE_GOOD,
             starting: AtomicBool::new(true),
             terminating: AtomicBool::new(false),

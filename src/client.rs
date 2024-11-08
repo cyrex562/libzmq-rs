@@ -1,36 +1,45 @@
 /* SPDX-License-Identifier: MPL-2.0 */
-
+use libc::EINVAL;
+use crate::ctx::Ctx;
 use crate::precompiled::*;
 use crate::macros::*;
-use crate::client::*;
 use crate::err::*;
+use crate::fq::FairQueue;
+use crate::lb::Lb;
 use crate::msg::*;
+use crate::options::Options;
+use crate::pipe::Pipe;
+use crate::session_base::ZMQ_CLIENT;
+use crate::socket_base::SocketBase;
 
-pub struct Client {
+pub struct Client<T: Pipe> {
     options: Options,
-    fq: Fq,
+    fq: FairQueue<T: Pipe>,
     lb: Lb,
+    socket_base: SocketBase
 }
 
-impl Client {
+impl Client<T> {
     pub fn new(parent: &Ctx, tid: u32, sid: i32) -> Self {
         let mut options = Options::default();
-        options.type_ = ZmqType::Client;
         options.can_send_hello_msg = true;
         options.can_recv_hiccup_msg = true;
 
-        Client {
+        let mut c = Client {
             options,
-            fq: Fq::new(),
+            fq: FairQueue::new(),
             lb: Lb::new(),
-        }
+            socket_base: SocketBase::new(parent, tid, sid, false)
+        };
+        c.socket_base.options.type_ = ZMQ_CLIENT;
+        
     }
 
     pub fn attach_pipe(&mut self, pipe: &Pipe, subscribe_to_all: bool, locally_initiated: bool) {
-        LIBZMQ_UNUSED!(subscribe_to_all);
-        LIBZMQ_UNUSED!(locally_initiated);
+        // LIBZMQ_UNUSED!(subscribe_to_all);
+        // LIBZMQ_UNUSED!(locally_initiated);
 
-        zmq_assert!(pipe);
+        // zmq_assert!(pipe);
 
         self.fq.attach(pipe);
         self.lb.attach(pipe);
@@ -65,11 +74,11 @@ impl Client {
         rc
     }
 
-    pub fn has_in(&self) -> bool {
+    pub fn has_in(&mut self) -> bool {
         self.fq.has_in()
     }
 
-    pub fn has_out(&self) -> bool {
+    pub fn has_out(&mut self) -> bool {
         self.lb.has_out()
     }
 

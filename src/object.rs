@@ -1,13 +1,16 @@
 use std::fmt;
-
+use crate::ctx::{Ctx, Endpoint};
+use crate::io_thread::IoThread;
+use crate::pipe::Pipe;
+use crate::session_base::Engine;
 // Forward declarations/type aliases
-type Endpoint = (); // Placeholder, implement actual type
-type Context = (); // Placeholder for ctx_t
-type Pipe = (); // Placeholder for pipe_t
-type Socket = (); // Placeholder for socket_base_t
-type Session = (); // Placeholder for session_base_t
-type IoThread = (); // Placeholder for io_thread_t
-type Engine = (); // Placeholder for i_engine
+// type Endpoint = (); // Placeholder, implement actual type
+// type Context = (); // Placeholder for ctx_t
+// type Pipe = (); // Placeholder for pipe_t
+// type Socket = (); // Placeholder for socket_base_t
+// type Session = (); // Placeholder for session_base_t
+// type IoThread = (); // Placeholder for io_thread_t
+// type Engine = (); // Placeholder for i_engine
 
 // Command types and arguments
 #[derive(Debug)]
@@ -42,7 +45,7 @@ pub struct EndpointUriPair {
 pub trait Object: Send {
     fn get_tid(&self) -> u32;
     fn set_tid(&mut self, id: u32);
-    fn get_ctx(&self) -> &Context;
+    fn get_ctx(&self) -> &Ctx;
     
     fn process_command(&mut self, cmd: Command);
     
@@ -64,12 +67,12 @@ pub trait Own: Object {
 
 // Main object implementation
 pub struct ObjectImpl {
-    ctx: Context,
+    ctx: Ctx,
     tid: u32,
 }
 
 impl ObjectImpl {
-    pub fn new(ctx: Context, tid: u32) -> Self {
+    pub fn new(ctx: Ctx, tid: u32) -> Self {
         Self { ctx, tid }
     }
     
@@ -128,7 +131,7 @@ impl Object for ObjectImpl {
         self.tid = id;
     }
     
-    fn get_ctx(&self) -> &Context {
+    fn get_ctx(&self) -> &Ctx {
         &self.ctx
     }
     

@@ -181,7 +181,7 @@ pub struct Options {
     bound_device: String,
 
     // ZAP configuration
-    zap_enforce_domain: bool,
+    pub(crate) zap_enforce_domain: bool,
 
     // Performance options
     loopback_fastpath: bool,
@@ -213,11 +213,11 @@ pub struct Options {
 
     // Protocol messages
     hello_msg: Vec<u8>,
-    can_send_hello_msg: bool,
+    pub(crate) can_send_hello_msg: bool,
     disconnect_msg: Vec<u8>,
     can_recv_disconnect_msg: bool,
     hiccup_msg: Vec<u8>,
-    can_recv_hiccup_msg: bool,
+    pub(crate) can_recv_hiccup_msg: bool,
 
     // NORM options
     #[cfg(feature = "norm")]

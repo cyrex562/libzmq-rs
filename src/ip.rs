@@ -5,6 +5,7 @@ use std::io;
 use std::mem;
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::os::raw::{c_int, c_void};
+#[cfg(target_os = "")]
 use std::os::unix::io::{AsRawFd, RawFd};
 use std::path::PathBuf;
 
@@ -17,9 +18,9 @@ use libc::{
 
 #[cfg(windows)]
 use winapi::um::winsock2::{
-    self, AF_INET, AF_INET6, IPPROTO_IP, IPPROTO_IPV6, IPPROTO_TCP, IP_TOS, SOCK_STREAM, SOL_SOCKET,
-    TCP_NODELAY, WSADATA, WSAStartup,
+    self, WSADATA, WSAStartup,
 };
+use windows_sys::Win32::Networking::WinSock::{IPPROTO_IP, IP_TOS};
 
 type Result<T> = std::result::Result<T, io::Error>;
 
@@ -263,11 +264,13 @@ pub fn create_ipc_wildcard_address() -> Result<(PathBuf, PathBuf)> {
 
 #[cfg(test)]
 mod tests {
+    use winapi::um::winsock2::SOCK_STREAM;
+    use windows_sys::Win32::Networking::WinSock::AF_INET;
     use super::*;
 
     #[test]
     fn test_socket_creation() {
-        let socket = Socket::new(AF_INET, SOCK_STREAM, 0).unwrap();
+        let socket = Socket::new(AF_INET as c_int, SOCK_STREAM, 0).unwrap();
         assert!(socket.fd > 0);
     }
 

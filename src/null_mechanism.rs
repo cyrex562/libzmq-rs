@@ -1,5 +1,7 @@
 use std::ffi::c_void;
 use std::mem;
+use crate::msg::Msg;
+use crate::options::Options;
 
 const ERROR_COMMAND_NAME: &[u8] = b"\x05ERROR";
 const READY_COMMAND_NAME: &[u8] = b"\x05READY";
@@ -42,7 +44,7 @@ impl NullMechanism {
         }
     }
 
-    pub fn next_handshake_command(&mut self, msg: &mut Message) -> Result<(), i32> {
+    pub fn next_handshake_command(&mut self, msg: &mut Msg) -> Result<(), i32> {
         if self.ready_command_sent || self.error_command_sent {
             return Err(libc::EAGAIN);
         }
@@ -84,7 +86,7 @@ impl NullMechanism {
         Ok(())
     }
 
-    pub fn process_handshake_command(&mut self, msg: &mut Message) -> Result<(), i32> {
+    pub fn process_handshake_command(&mut self, msg: &mut Msg) -> Result<(), i32> {
         if self.ready_command_received || self.error_command_received {
             self.handle_protocol_error();
             return Err(libc::EPROTO);

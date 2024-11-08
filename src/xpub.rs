@@ -1,14 +1,20 @@
 use std::collections::VecDeque;
 use std::ffi::c_void;
-
+use crate::blob::Blob;
+use crate::ctx::Ctx;
+use crate::dist::Dist;
+use crate::metadata::Metadata;
+use crate::msg::Msg;
+use crate::mtrie::Mtrie;
+use crate::pipe::Pipe;
 // Forward declarations - these would be defined elsewhere
-pub struct Context;
-pub struct Pipe;
-pub struct Message;
-pub struct MTrie;
-pub struct Dist;
-pub struct Metadata;
-pub struct Blob;
+// pub struct Context;
+// pub struct Pipe;
+// pub struct Message;
+// pub struct MTrie;
+// pub struct Dist;
+// pub struct Metadata;
+// pub struct Blob;
 
 pub struct XPub {
     // Socket options
@@ -23,12 +29,12 @@ pub struct XPub {
     send_last_pipe: bool,
 
     // State
-    subscriptions: MTrie,
-    manual_subscriptions: MTrie,
+    subscriptions: Mtrie,
+    manual_subscriptions: Mtrie,
     dist: Dist,
     last_pipe: Option<Box<Pipe>>,
     pending_pipes: VecDeque<Box<Pipe>>,
-    welcome_msg: Message,
+    welcome_msg: Msg,
     
     // Pending messages
     pending_data: VecDeque<Blob>,
@@ -37,7 +43,7 @@ pub struct XPub {
 }
 
 impl XPub {
-    pub fn new(parent: &Context, tid: u32, sid: i32) -> Self {
+    pub fn new(parent: &Ctx, tid: u32, sid: i32) -> Self {
         XPub {
             verbose_subs: false,
             verbose_unsubs: false,
@@ -48,12 +54,12 @@ impl XPub {
             lossy: true,
             manual: false,
             send_last_pipe: false,
-            subscriptions: MTrie::new(),
-            manual_subscriptions: MTrie::new(),
+            subscriptions: Mtrie::new(),
+            manual_subscriptions: Mtrie::new(),
             dist: Dist::new(),
             last_pipe: None,
             pending_pipes: VecDeque::new(),
-            welcome_msg: Message::new(),
+            welcome_msg: Msg::new(),
             pending_data: VecDeque::new(),
             pending_metadata: VecDeque::new(),
             pending_flags: VecDeque::new(),

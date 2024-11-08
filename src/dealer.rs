@@ -1,22 +1,18 @@
-use crate::{
-    context::Context,
-    fair_queue::FairQueue,
-    load_balancer::LoadBalancer,
-    message::Message,
-    pipe::Pipe,
-    socket::SocketBase,
-    socket_options::{SocketOptions, ZMQ_DEALER},
-};
+use crate::{ctx::Ctx, pipe::Pipe, ZMQ_DEALER};
+use crate::fq::FairQueue;
+use crate::lb::Lb;
+use crate::msg::Msg;
+use crate::socket_base::{SocketBase, SocketOptions};
 
 pub struct Dealer {
     socket_base: SocketBase,
     fq: FairQueue,
-    lb: LoadBalancer,
+    lb: Lb,
     probe_router: bool,
 }
 
 impl Dealer {
-    pub fn new(parent: &Context, tid: u32, sid: i32) -> Self {
+    pub fn new(parent: &Ctx, tid: u32, sid: i32) -> Self {
         let mut options = SocketOptions::default();
         options.socket_type = ZMQ_DEALER;
         options.can_send_hello_msg = true;
@@ -25,14 +21,14 @@ impl Dealer {
         Dealer {
             socket_base: SocketBase::new(parent, tid, sid, options),
             fq: FairQueue::new(),
-            lb: LoadBalancer::new(),
+            lb: Lb::new(),
             probe_router: false,
         }
     }
 
     pub fn attach_pipe(&mut self, pipe: &mut Pipe, _subscribe_to_all: bool, _locally_initiated: bool) {
         if self.probe_router {
-            let probe_msg = Message::new();
+            let probe_msg = Msg::new();
             if let Ok(msg) = probe_msg {
                 let _ = pipe.write(&msg);
                 pipe.flush();
@@ -54,11 +50,11 @@ impl Dealer {
         Err(libc::EINVAL)
     }
 
-    pub fn send(&mut self, msg: &mut Message) -> Result<(), i32> {
+    pub fn send(&mut self, msg: &mut Msg) -> Result<(), i32> {
         self.sendpipe(msg, None)
     }
 
-    pub fn recv(&mut self, msg: &mut Message) -> Result<(), i32> {
+    pub fn recv(&mut self, msg: &mut Msg) -> Result<(), i32> {
         self.recvpipe(msg, None)
     }
 
@@ -83,11 +79,11 @@ impl Dealer {
         self.lb.pipe_terminated(pipe);
     }
 
-    pub fn sendpipe(&mut self, msg: &mut Message, pipe: Option<&mut Pipe>) -> Result<(), i32> {
+    pub fn sendpipe(&mut self, msg: &mut Msg, pipe: Option<&mut Pipe>) -> Result<(), i32> {
         self.lb.sendpipe(msg, pipe)
     }
 
-    pub fn recvpipe(&mut self, msg: &mut Message, pipe: Option<&mut Pipe>) -> Result<(), i32> {
+    pub fn recvpipe(&mut self, msg: &mut Msg, pipe: Option<&mut Pipe>) -> Result<(), i32> {
         self.fq.recvpipe(msg, pipe)
     }
 }

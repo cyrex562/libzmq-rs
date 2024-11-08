@@ -2,11 +2,6 @@
 
 use std::ptr::null_mut;
 
-mod precompiled;
-mod io_object;
-mod io_thread;
-mod err;
-
 pub struct IoObject<'a> {
     poller: *mut Poller,
     io_thread: Option<&'a IoThread>,

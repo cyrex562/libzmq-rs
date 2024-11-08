@@ -7,6 +7,7 @@ use std::os::raw::c_char;
 use std::net::Ipv6Addr;
 #[cfg(unix)]
 use libc::{self, sockaddr, sockaddr_in, sockaddr_in6, AF_INET, AF_INET6};
+use windows_sys::Win32::Networking::WinSock::{AF_INET, AF_INET6};
 
 #[derive(Clone, Debug)]
 pub struct IpAddrT {

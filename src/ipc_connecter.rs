@@ -3,6 +3,8 @@ use std::{
     os::unix::io::{AsRawFd, RawFd},
 };
 use libc::{self, AF_UNIX, EINPROGRESS, SOCK_STREAM, SOL_SOCKET, SO_ERROR};
+use winapi::um::winsock2::{SOCK_STREAM, SOL_SOCKET, SO_ERROR};
+use windows_sys::Win32::Networking::WinSock::AF_UNIX;
 
 // Constants
 const RETIRED_FD: RawFd = -1;

@@ -1,19 +1,20 @@
 
 // SPDX-License-Identifier: MPL-2.0
 
-use std::ptr;
 use std::sync::Arc;
 use crate::blob::Blob;
 use crate::socket_base::SocketBase;
-use crate::session_base::SessionBase;
+use crate::session_base::{SessionBase, ZMQ_CHANNEL};
 use crate::ctx::Ctx;
 use crate::msg::Msg;
 use crate::pipe::Pipe;
 use crate::io_thread::IoThread;
+use crate::pipe::MsgFlags::MORE;
 
 pub struct Channel {
     pipe: Option<Arc<Pipe>>,
     // other fields from SocketBase
+    socket_base: SocketBase,
 }
 
 impl Channel {
@@ -21,8 +22,9 @@ impl Channel {
         let mut channel = Channel {
             pipe: None,
             // initialize other fields from SocketBase
+            socket_base: SocketBase::new(parent, tid, sid, false),
         };
-        channel.options.type = ZMQ_CHANNEL;
+        channel.socket_base.options.type_ = ZMQ_CHANNEL;
         channel
     }
 
@@ -54,7 +56,7 @@ impl Channel {
 
     pub fn xsend(&mut self, msg: &mut Msg) -> Result<(), i32> {
         // CHANNEL sockets do not allow multipart data (ZMQ_SNDMORE)
-        if msg.flags() & Msg::MORE != 0 {
+        if msg.flags() & MORE != 0 {
             return Err(libc::EINVAL);
         }
 
@@ -75,9 +77,9 @@ impl Channel {
 
         if let Some(pipe) = &self.pipe {
             let mut read = pipe.read(msg);
-            while read && msg.flags() & Msg::MORE != 0 {
+            while read && msg.flags() & MORE != 0 {
                 read = pipe.read(msg);
-                while read && msg.flags() & Msg::MORE != 0 {
+                while read && msg.flags() & MORE != 0 {
                     read = pipe.read(msg);
                 }
                 if read {

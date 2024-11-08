@@ -27,7 +27,7 @@ impl ConditionVariable {
         
         #[cfg(target_os = "windows")]
         {
-            let mut cv = CONDITION_VARIABLE::default();
+            let mut cv: CONDITION_VARIABLE = unsafe { std::mem::zeroed() };
             unsafe {
                 InitializeConditionVariable(&mut cv);
             }
@@ -90,7 +90,7 @@ impl ConditionVariable {
         }
     }
 
-    pub fn broadcast(&self) {
+    pub fn broadcast(&mut self) {
         #[cfg(not(any(target_os = "windows", target_os = "vxworks")))]
         {
             self.inner.notify_all();
@@ -98,7 +98,7 @@ impl ConditionVariable {
         
         #[cfg(target_os = "windows")]
         unsafe {
-            WakeAllConditionVariable(&self.inner);
+            WakeAllConditionVariable(&mut self.inner);
         }
         
         #[cfg(target_os = "vxworks")]

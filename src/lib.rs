@@ -29,11 +29,13 @@ mod dbuffer;
 mod dealer;
 mod decoder_allocators;
 mod decoder;
+#[cfg(target_os = "linux")]
 mod devpoll;
 mod dgram;
 mod dish;
 mod dist;
 mod encoder;
+#[cfg(target_os = "linux")]
 mod epoll;
 mod err;
 mod fd;
@@ -51,6 +53,7 @@ mod ip_resolver;
 mod ip;
 mod ipc_address;
 mod ipc_connecter;
+#[cfg(target_os = "")]
 mod kqueue;
 mod lb;
 mod likely;
@@ -82,7 +85,7 @@ mod poller_base;
 mod pollset;
 mod precompiled;
 mod proxy;
-mod pub;
+mod zmq_pub;
 mod pull;
 mod push;
 mod radio;
@@ -153,6 +156,8 @@ mod zap_client;
 mod zmq_draft;
 mod zmq_utils;
 mod zmtp_engine;
+mod endpoint;
+mod ipc_listener;
 
 // Version info
 pub const ZMQ_VERSION_MAJOR: c_int = 4;
@@ -176,7 +181,7 @@ pub const ZMQ_STREAM: c_int = 11;
 // Basic types and structures
 #[repr(C)]
 pub struct zmq_msg_t {
-    _: [u8; 64], // Internal implementation detail
+    field0: [u8; 64], // Internal implementation detail
 }
 
 #[repr(C)]

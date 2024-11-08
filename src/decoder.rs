@@ -46,7 +46,7 @@ where
     }
 
     // Protected method for derived implementations
-    protected fn next_step(
+    fn next_step(
         &mut self,
         read_pos: usize,
         to_read: usize,

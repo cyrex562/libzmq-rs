@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::sync::atomic::{AtomicI32, AtomicUsize, Ordering};
 use std::ptr;
 use std::mem;
@@ -73,7 +74,7 @@ pub struct Msg {
     metadata: Option<Box<Metadata>>,
     flags: u8,
     routing_id: u32,
-    group: GroupStorage,
+    pub(crate) group: GroupStorage,
     content: MsgContent,
 }
 
@@ -267,6 +268,62 @@ impl Msg {
                 std::str::from_utf8(&group.group[..len]).unwrap_or("")
             }
         }
+    }
+    
+    pub fn has_more(&self) -> bool {
+        self.has_flag(MsgFlags::More)
+    }
+    
+    pub fn check(&self) -> bool {
+        self.has_flag(MsgFlags::Command)
+    }
+
+    pub(crate) fn init_join(&mut self) -> Result<(), Box<dyn Error>> {
+        self.flags |= 1; // JOIN flag
+        Ok(())
+    }
+
+    pub(crate) fn init_leave(&mut self) -> Result<(), Box<dyn Error>> {
+        self.flags |= 2; // LEAVE flag
+        Ok(())
+    }
+
+    // fn set_group(&mut self, group: &str) -> Result<(), Box<dyn Error>> {
+    //     self.group = group.to_string();
+    //     Ok(())
+    // }
+
+    fn is_join(&self) -> bool {
+        (self.flags & 1) != 0
+    }
+
+    fn is_leave(&self) -> bool {
+        (self.flags & 2) != 0
+    }
+
+    pub fn flags(&self) -> u32 {
+        self.flags as u32
+    }
+
+    pub fn is_vsm(&self) -> bool {
+        // Simplified VSM check
+        false
+    }
+
+    pub fn add_refs(&mut self, refs: i32) {
+        self.refs += refs;
+    }
+
+    pub fn rm_refs(&mut self, refs: i32) {
+        self.refs -= refs;
+    }
+
+    pub fn close(&mut self) -> bool {
+        true
+    }
+
+    pub fn init(&mut self) -> bool {
+        true
     }
 }
 

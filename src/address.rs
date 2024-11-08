@@ -2,7 +2,9 @@
 use std::ptr::null_mut;
 use std::ffi::CString;
 use std::os::raw::c_void;
-
+use crate::ctx::Ctx;
+use crate::tcp_address::TcpAddress;
+use crate::udp_address::UdpAddress;
 // mod ctx;
 // mod tcp_address;
 // mod udp_address;
@@ -16,14 +18,14 @@ mod vmci_address;
 pub struct Address {
     protocol: String,
     address: String,
-    parent: *mut ctx::Ctx,
+    parent: *mut Ctx,
     resolved: ResolvedAddress,
 }
 
 enum ResolvedAddress {
     Dummy(*mut c_void),
-    Tcp(*mut tcp_address::TcpAddress),
-    Udp(*mut udp_address::UdpAddress),
+    Tcp(*mut TcpAddress),
+    Udp(*mut UdpAddress),
     #[cfg(feature = "ws")]
     Ws(*mut ws_address::WsAddress),
     #[cfg(feature = "wss")]
@@ -37,7 +39,7 @@ enum ResolvedAddress {
 }
 
 impl Address {
-    pub fn new(protocol: &str, address: &str, parent: *mut ctx::Ctx) -> Address {
+    pub fn new(protocol: &str, address: &str, parent: *mut Ctx) -> Address {
         Address {
             protocol: protocol.to_string(),
             address: address.to_string(),

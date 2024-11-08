@@ -7,47 +7,47 @@ pub trait Pipe {
     fn check_hwm(&self) -> bool;
 }
 
-#[derive(Clone)]
-pub struct Message {
-    flags: u32,
-    refs: i32,
-}
+// #[derive(Clone)]
+// pub struct Message {
+//     flags: u32,
+//     refs: i32,
+// }
 
-impl Message {
-    const MORE: u32 = 0x1;
-
-    pub fn new() -> Self {
-        Message {
-            flags: 0,
-            refs: 0,
-        }
-    }
-
-    pub fn flags(&self) -> u32 {
-        self.flags
-    }
-
-    pub fn is_vsm(&self) -> bool {
-        // Simplified VSM check
-        false
-    }
-
-    pub fn add_refs(&mut self, refs: i32) {
-        self.refs += refs;
-    }
-
-    pub fn rm_refs(&mut self, refs: i32) {
-        self.refs -= refs;
-    }
-
-    pub fn close(&mut self) -> bool {
-        true
-    }
-
-    pub fn init(&mut self) -> bool {
-        true
-    }
-}
+// impl Message {
+//     const MORE: u32 = 0x1;
+// 
+//     pub fn new() -> Self {
+//         Message {
+//             flags: 0,
+//             refs: 0,
+//         }
+//     }
+// 
+//     pub fn flags(&self) -> u32 {
+//         self.flags
+//     }
+// 
+//     pub fn is_vsm(&self) -> bool {
+//         // Simplified VSM check
+//         false
+//     }
+// 
+//     pub fn add_refs(&mut self, refs: i32) {
+//         self.refs += refs;
+//     }
+// 
+//     pub fn rm_refs(&mut self, refs: i32) {
+//         self.refs -= refs;
+//     }
+// 
+//     pub fn close(&mut self) -> bool {
+//         true
+//     }
+// 
+//     pub fn init(&mut self) -> bool {
+//         true
+//     }
+// }
 
 pub struct Dist {
     // List of outbound pipes
