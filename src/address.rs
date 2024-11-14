@@ -1,6 +1,5 @@
 
 use std::ptr::null_mut;
-use std::ffi::CString;
 use std::os::raw::c_void;
 use crate::ctx::Ctx;
 use crate::tcp_address::TcpAddress;

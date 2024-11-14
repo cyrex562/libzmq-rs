@@ -28,3 +28,12 @@ mach = "0.3"
 [dev-dependencies]
 hex = "0.4"
 
+[features]
+
+vmci = []
+ws = []
+wss = []
+ipc  = []
+linux = []
+vxworks = []
+curve = []

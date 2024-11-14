@@ -127,3 +127,5 @@ zeromq-*.zip
 core
 
 mybuild
+
+target/**
