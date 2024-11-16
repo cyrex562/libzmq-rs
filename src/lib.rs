@@ -1,11 +1,9 @@
-
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use std::ffi::{c_void, CStr};
-use std::os::raw::{c_char, c_int, c_long, c_short, c_uint};
+use std::ffi::c_void;
+use std::os::raw::{c_int, c_short};
 use std::ptr;
-use std::time::Duration;
 
 mod address;
 mod array;
@@ -13,33 +11,35 @@ mod atomic_counter;
 mod atomic_ptr;
 mod blob;
 mod channel;
+mod client;
 mod clock;
 mod command;
-mod client;
 mod compat;
 mod condition_variable;
 mod config;
-mod ctx;
-mod curve_client_tools;
+mod constants;
+mod context;
 mod curve_client;
-mod curve_mechanism_base;
+mod curve_client_tools;
 mod curve_keygen;
+mod curve_mechanism_base;
 mod curve_server;
 mod dbuffer;
 mod dealer;
-mod decoder_allocators;
 mod decoder;
+mod decoder_allocators;
 #[cfg(target_os = "linux")]
 mod devpoll;
 mod dgram;
 mod dish;
 mod dist;
 mod encoder;
+mod endpoint;
 #[cfg(target_os = "linux")]
 mod epoll;
 mod err;
 mod fd;
-mod fq;
+mod fair_queue;
 mod gather;
 mod generic_mtrie;
 mod i_decoder;
@@ -49,21 +49,22 @@ mod i_mailbox;
 mod i_poll_events;
 mod io_object;
 mod io_thread;
-mod ip_resolver;
 mod ip;
+mod ip_resolver;
 mod ipc_address;
 mod ipc_connecter;
-#[cfg(target_os = "")]
+mod ipc_listener;
+#[cfg(unix)]
 mod kqueue;
 mod lb;
 mod likely;
 mod macros;
-mod mailbox_safe;
 mod mailbox;
-mod mechanism_base;
+mod mailbox_safe;
 mod mechanism;
+mod mechanism_base;
+mod message;
 mod metadata;
-mod msg;
 mod mtrie;
 mod mutex;
 mod norm_engine;
@@ -80,12 +81,11 @@ mod pipe;
 mod plain_client;
 mod plain_common;
 mod plain_server;
+#[cfg(not(target_os = "windows"))]
 mod poll;
 mod poller_base;
 mod pollset;
-mod precompiled;
 mod proxy;
-mod zmq_pub;
 mod pull;
 mod push;
 mod radio;
@@ -105,25 +105,27 @@ mod server;
 mod session_base;
 mod sha1;
 mod signaler;
+mod sockaddr_storage;
 mod socket_base;
 mod socket_poller;
-mod socks_connecter;
 mod socks;
+mod socks_connecter;
+mod stream;
 mod stream_connecter_base;
 mod stream_engine_base;
 mod stream_listener_base;
-mod stream;
 mod sub;
+mod tcp;
 mod tcp_address;
 mod tcp_connecter;
 mod tcp_listener;
-mod tcp;
 mod thread;
 mod timers;
 mod tipc_address;
 mod tipc_connecter;
 mod tipc_listener;
 mod trie;
+mod types;
 mod udp_address;
 mod udp_engine;
 mod v1_decoder;
@@ -132,10 +134,10 @@ mod v2_decoder;
 mod v2_encoder;
 mod v2_protocol;
 mod v3_1_encoder;
+mod vmci;
 mod vmci_address;
 mod vmci_connecter;
 mod vmci_listener;
-mod vmci;
 mod wepoll;
 mod windows;
 mod wire;
@@ -148,16 +150,15 @@ mod ws_protocol;
 mod wss_engine;
 mod xpub;
 mod xsub;
+mod ypipe;
 mod ypipe_base;
 mod ypipe_conflate;
-mod ypipe;
 mod yqueue;
 mod zap_client;
 mod zmq_draft;
+mod zmq_pub;
 mod zmq_utils;
 mod zmtp_engine;
-mod endpoint;
-mod ipc_listener;
 
 // Version info
 pub const ZMQ_VERSION_MAJOR: c_int = 4;
@@ -235,14 +236,14 @@ pub extern "C" fn zmq_ctx_term(context: *mut c_void) -> c_int {
     }
 }
 
-// Helper structures 
+// Helper structures
 struct Context {
     // Internal context implementation
 }
 
 impl Context {
     fn new() -> Self {
-        Context { }
+        Context {}
     }
 
     fn terminate(&self) -> Result<(), i32> {

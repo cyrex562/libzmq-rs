@@ -1,5 +1,4 @@
-use std::fmt;
-use crate::ctx::{Ctx, Endpoint};
+use crate::context::{Context, Endpoint};
 use crate::io_thread::IoThread;
 use crate::pipe::Pipe;
 use crate::session_base::Engine;
@@ -21,7 +20,7 @@ pub enum CommandType {
     Plug,
     Own { object: Box<dyn Own> },
     Attach { engine: Box<dyn Engine> },
-    Bind { pipe: Box<Pipe> },
+    Bind { pipe: Box<dyn Pipe> },
     Hiccup { pipe: *mut () }, // Unsafe raw pointer preserved from C++
     PipePeerStats {
         queue_count: u64,
@@ -45,7 +44,7 @@ pub struct EndpointUriPair {
 pub trait Object: Send {
     fn get_tid(&self) -> u32;
     fn set_tid(&mut self, id: u32);
-    fn get_ctx(&self) -> &Ctx;
+    fn get_ctx(&self) -> &Context;
     
     fn process_command(&mut self, cmd: Command);
     
@@ -67,12 +66,12 @@ pub trait Own: Object {
 
 // Main object implementation
 pub struct ObjectImpl {
-    ctx: Ctx,
+    ctx: Context,
     tid: u32,
 }
 
 impl ObjectImpl {
-    pub fn new(ctx: Ctx, tid: u32) -> Self {
+    pub fn new(ctx: Context, tid: u32) -> Self {
         Self { ctx, tid }
     }
     
@@ -131,7 +130,7 @@ impl Object for ObjectImpl {
         self.tid = id;
     }
     
-    fn get_ctx(&self) -> &Ctx {
+    fn get_ctx(&self) -> &Context {
         &self.ctx
     }
     
@@ -140,6 +139,12 @@ impl Object for ObjectImpl {
             CommandType::ActivateRead => self.process_activate_read(),
             CommandType::ActivateWrite { msgs_read } => self.process_activate_write(msgs_read),
             CommandType::Stop => self.process_stop(),
+            CommandType::Plug => todo!(),
+            CommandType::Own { object } => todo!(),
+            CommandType::Attach { engine } => todo!(),
+            CommandType::Bind { pipe } => todo!(),
+            CommandType::Hiccup { pipe } => todo!(),
+            CommandType::PipePeerStats { queue_count, socket_base, endpoint_pair } => todo!(),
             // ... handle other command types
         }
     }

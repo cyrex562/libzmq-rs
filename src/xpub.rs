@@ -1,10 +1,10 @@
 use std::collections::VecDeque;
 use std::ffi::c_void;
 use crate::blob::Blob;
-use crate::ctx::Ctx;
+use crate::context::Context;
 use crate::dist::Dist;
 use crate::metadata::Metadata;
-use crate::msg::Msg;
+use crate::message::Message;
 use crate::mtrie::Mtrie;
 use crate::pipe::Pipe;
 // Forward declarations - these would be defined elsewhere
@@ -34,7 +34,7 @@ pub struct XPub {
     dist: Dist,
     last_pipe: Option<Box<Pipe>>,
     pending_pipes: VecDeque<Box<Pipe>>,
-    welcome_msg: Msg,
+    welcome_msg: Message,
     
     // Pending messages
     pending_data: VecDeque<Blob>,
@@ -43,7 +43,7 @@ pub struct XPub {
 }
 
 impl XPub {
-    pub fn new(parent: &Ctx, tid: u32, sid: i32) -> Self {
+    pub fn new(parent: &Context, tid: u32, sid: i32) -> Self {
         XPub {
             verbose_subs: false,
             verbose_unsubs: false,
@@ -59,7 +59,7 @@ impl XPub {
             dist: Dist::new(),
             last_pipe: None,
             pending_pipes: VecDeque::new(),
-            welcome_msg: Msg::new(),
+            welcome_msg: Message::new(),
             pending_data: VecDeque::new(),
             pending_metadata: VecDeque::new(),
             pending_flags: VecDeque::new(),

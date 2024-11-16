@@ -1,24 +1,23 @@
-
 // SPDX-License-Identifier: MPL-2.0
 
-use std::sync::Arc;
 use crate::blob::Blob;
-use crate::socket_base::SocketBase;
-use crate::session_base::{SessionBase, ZMQ_CHANNEL};
-use crate::ctx::Ctx;
-use crate::msg::Msg;
-use crate::pipe::Pipe;
+use crate::context::Context;
 use crate::io_thread::IoThread;
+use crate::message::Message;
 use crate::pipe::MsgFlags::MORE;
+use crate::pipe::Pipe;
+use crate::session_base::{SessionBase, ZMQ_CHANNEL};
+use crate::socket_base::SocketBase;
+use std::sync::Arc;
 
 pub struct Channel {
-    pipe: Option<Arc<Pipe>>,
+    pipe: Option<Arc<dyn Pipe>>,
     // other fields from SocketBase
     socket_base: SocketBase,
 }
 
 impl Channel {
-    pub fn new(parent: &Arc<Ctx>, tid: u32, sid: i32) -> Self {
+    pub fn new(parent: &Arc<Context>, tid: u32, sid: i32) -> Self {
         let mut channel = Channel {
             pipe: None,
             // initialize other fields from SocketBase
@@ -28,7 +27,12 @@ impl Channel {
         channel
     }
 
-    pub fn xattach_pipe(&mut self, pipe: Arc<Pipe>, subscribe_to_all: bool, locally_initiated: bool) {
+    pub fn xattach_pipe(
+        &mut self,
+        pipe: Arc<Pipe>,
+        subscribe_to_all: bool,
+        locally_initiated: bool,
+    ) {
         // ZMQ_PAIR socket can only be connected to a single peer.
         // The socket rejects any further connection requests.
         if self.pipe.is_none() {
@@ -54,7 +58,7 @@ impl Channel {
         // There's nothing to do here.
     }
 
-    pub fn xsend(&mut self, msg: &mut Msg) -> Result<(), i32> {
+    pub fn xsend(&mut self, msg: &mut Message) -> Result<(), i32> {
         // CHANNEL sockets do not allow multipart data (ZMQ_SNDMORE)
         if msg.flags() & MORE != 0 {
             return Err(libc::EINVAL);
@@ -72,7 +76,7 @@ impl Channel {
         }
     }
 
-    pub fn xrecv(&mut self, msg: &mut Msg) -> Result<(), i32> {
+    pub fn xrecv(&mut self, msg: &mut Message) -> Result<(), i32> {
         msg.close().map_err(|_| libc::EINVAL)?;
 
         if let Some(pipe) = &self.pipe {

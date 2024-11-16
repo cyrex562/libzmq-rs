@@ -1,31 +1,29 @@
 #![allow(dead_code)]
 
-use std::ffi::CString;
 use std::io;
 use std::mem;
-use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::os::raw::{c_int, c_void};
-#[cfg(target_os = "")]
+#[cfg(not(target_os = "windows"))]
 use std::os::unix::io::{AsRawFd, RawFd};
-use std::path::PathBuf;
 
 #[cfg(unix)]
 use libc::{
-    self, AF_INET, AF_INET6, AF_UNIX, IPPROTO_IP, IPPROTO_IPV6, IPPROTO_TCP, IP_TOS, IPV6_TCLASS,
+    self, AF_INET, AF_INET6, AF_UNIX, IPPROTO_IP, IPPROTO_IPV6, IPPROTO_TCP, IPV6_TCLASS, IP_TOS,
     O_NONBLOCK, SOCK_CLOEXEC, SOCK_STREAM, SOL_SOCKET, SO_BINDTODEVICE, SO_NOSIGPIPE, SO_PRIORITY,
     TCP_NODELAY,
 };
 
 #[cfg(windows)]
-use winapi::um::winsock2::{
-    self, WSADATA, WSAStartup,
-};
+use winapi::um::winsock2::{self, WSAStartup, WSADATA};
 use windows_sys::Win32::Networking::WinSock::{IPPROTO_IP, IP_TOS};
 
 type Result<T> = std::result::Result<T, io::Error>;
 
 pub struct Socket {
+    #[cfg(not(target_os = "windows"))]
     fd: RawFd,
+    #[cfg(target_os = "windows")]
+    fd: c_int,
 }
 
 impl Socket {
@@ -193,11 +191,7 @@ impl Socket {
             use winapi::um::handleapi::SetHandleInformation;
             use winapi::um::winbase::HANDLE_FLAG_INHERIT;
 
-            if SetHandleInformation(
-                self.fd as *mut _,
-                HANDLE_FLAG_INHERIT,
-                0,
-            ) == 0 {
+            if SetHandleInformation(self.fd as *mut _, HANDLE_FLAG_INHERIT, 0) == 0 {
                 return Err(io::Error::last_os_error());
             }
         }
@@ -264,9 +258,9 @@ pub fn create_ipc_wildcard_address() -> Result<(PathBuf, PathBuf)> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use winapi::um::winsock2::SOCK_STREAM;
     use windows_sys::Win32::Networking::WinSock::AF_INET;
-    use super::*;
 
     #[test]
     fn test_socket_creation() {

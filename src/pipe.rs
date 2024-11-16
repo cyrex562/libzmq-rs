@@ -135,75 +135,77 @@ impl YPipe {
     }
 }
 
-pub struct Pipe {
-    in_pipe: Option<YPipe>,
-    out_pipe: Option<YPipe>,
-    in_active: bool,
-    out_active: bool,
-    hwm: i32,
-    lwm: i32,
-    msgs_read: u64,
-    msgs_written: u64,
-    peers_msgs_read: u64,
-    peer: Option<Arc<Pipe>>,
-    sink: Option<Box<dyn PipeEvents>>,
-    state: PipeState,
-    delay: bool,
-    router_socket_routing_id: Blob,
-    server_socket_routing_id: u32,
-    conflate: bool,
-    endpoint_pair: EndpointUriPair,
-    disconnect_msg: Msg,
-}
+// pub struct Pipe {
+//     in_pipe: Option<YPipe>,
+//     out_pipe: Option<YPipe>,
+//     in_active: bool,
+//     out_active: bool,
+//     hwm: i32,
+//     lwm: i32,
+//     msgs_read: u64,
+//     msgs_written: u64,
+//     peers_msgs_read: u64,
+//     peer: Option<Arc<Pipe>>,
+//     sink: Option<Box<dyn PipeEvents>>,
+//     state: PipeState,
+//     delay: bool,
+//     router_socket_routing_id: Blob,
+//     server_socket_routing_id: u32,
+//     conflate: bool,
+//     endpoint_pair: EndpointUriPair,
+//     disconnect_msg: Msg,
+// }
 
-#[derive(PartialEq)]
-enum PipeState {
-    Active,
-    DelimiterReceived,
-    WaitingForDelimiter,
-    TermAckSent,
-    TermReqSent1,
-    TermReqSent2,
-}
+pub trait Pipe {
+    // in_pipe: Option<YPipe>,
+    fn get_in_pipe(&mut self) -> Option<YPipe>;
+    fn set_in_pipe(&mut self, in_pipe: YPipe);
+    // out_pipe: Option<YPipe>,
+    fn get_out_pipe(&mut self) -> Option<YPipe>;
+    fn set_out_pipe(&mut self, out_pipe: YPipe);
+    // hwm: i32,
+    fn get_hwm(&mut self) -> i32;
+    fn set_hwm(&mut self, hwm: i32);
+    // lwm: i32,
+    fn get_lwm(&mut self) -> i32;
+    fn set_lwm(&mut self, lwm: i32);
+    // msgs_read: u64,
+    fn get_msgs_read(&mut self) -> u64;
+    fn set_msgs_read(&mut self, msgs_read: u64);
+    // msgs_written: u64,
+    fn get_msgs_written(&mut self) -> u64;
+    // peers_msgs_read: u64,
+    fn get_peers_msgs_read(&mut self) -> u64;
+    fn set_peers_msgs_read(&mut self, peers_msgs_read: u64);
+    // peer: Option<Arc<Pipe>>,
+    fn get_peer(&mut self) -> Option<Arc<Pipe>>;
+    fn set_peer(&mut self, peer: Arc<Pipe>);
+    // sink: Option<Box<dyn PipeEvents>>,
+    fn get_sink(&mut self) -> Option<Box<dyn PipeEvents>>;
+    fn set_sink(&mut self, sink: Box<dyn PipeEvents>);
+    // state: PipeState,
+    fn get_state(&mut self) -> PipeState;
+    fn set_state(&mut self, state: PipeState);
+    // delay: bool,
+    fn get_delay(&mut self) -> bool;
+    fn set_delay(&mut self, delay: bool);
+    // router_socket_routing_id: Blob,
+    fn get_router_socket_routing_id(&mut self) -> Blob;
+    fn set_router_socket_routing_id(&mut self, router_socket_routing_id: Blob);
+    // server_socket_routing_id: u32,
+    fn get_server_socket_routing_id(&mut self) -> u32;
+    fn set_server_socket_routing_id(&mut self, server_socket_routing_id: u32);
+    // conflate: bool,
+    fn get_conflate(&mut self) -> bool;
+    fn set_conflate(&mut self, conflate: bool);
+    // endpoint_pair: EndpointUriPair,
+    fn get_endpoint_pair(&mut self) -> EndpointUriPair;
+    fn set_endpoint_pair(&mut self, endpoint_pair: EndpointUriPair);
+    // disconnect_msg: Msg,
+    fn get_disconnect_msg(&mut self) -> Msg;
+    fn set_disconnect_msg(&mut self, disconnect_msg: Msg);
 
-impl Pipe {
-    pub fn new(
-        in_pipe: YPipe,
-        out_pipe: YPipe,
-        inhwm: i32,
-        outhwm: i32,
-        conflate: bool,
-    ) -> Self {
-        Self {
-            in_pipe: Some(in_pipe),
-            out_pipe: Some(out_pipe),
-            in_active: true,
-            out_active: true,
-            hwm: outhwm,
-            lwm: Self::compute_lwm(inhwm),
-            msgs_read: 0,
-            msgs_written: 0,
-            peers_msgs_read: 0,
-            peer: None,
-            sink: None,
-            state: PipeState::Active,
-            delay: true,
-            router_socket_routing_id: Blob { data: Vec::new() },
-            server_socket_routing_id: 0,
-            conflate,
-            endpoint_pair: EndpointUriPair {
-                local: String::new(),
-                remote: String::new(),
-            },
-            disconnect_msg: Msg::new(),
-        }
-    }
-
-    pub fn set_peer(&mut self, peer: Arc<Pipe>) {
-        self.peer = Some(peer);
-    }
-
-    pub fn check_read(&mut self) -> bool {
+    fn check_read(&mut self) -> bool {
         if !self.in_active {
             return false;
         }
@@ -257,6 +259,108 @@ impl Pipe {
         }
     }
 }
+
+#[derive(PartialEq)]
+enum PipeState {
+    Active,
+    DelimiterReceived,
+    WaitingForDelimiter,
+    TermAckSent,
+    TermReqSent1,
+    TermReqSent2,
+}
+
+// impl Pipe {
+//     pub fn new(
+//         in_pipe: YPipe,
+//         out_pipe: YPipe,
+//         inhwm: i32,
+//         outhwm: i32,
+//         conflate: bool,
+//     ) -> Self {
+//         Self {
+//             in_pipe: Some(in_pipe),
+//             out_pipe: Some(out_pipe),
+//             in_active: true,
+//             out_active: true,
+//             hwm: outhwm,
+//             lwm: Self::compute_lwm(inhwm),
+//             msgs_read: 0,
+//             msgs_written: 0,
+//             peers_msgs_read: 0,
+//             peer: None,
+//             sink: None,
+//             state: PipeState::Active,
+//             delay: true,
+//             router_socket_routing_id: Blob { data: Vec::new() },
+//             server_socket_routing_id: 0,
+//             conflate,
+//             endpoint_pair: EndpointUriPair {
+//                 local: String::new(),
+//                 remote: String::new(),
+//             },
+//             disconnect_msg: Msg::new(),
+//         }
+//     }
+
+//     pub fn set_peer(&mut self, peer: Arc<Pipe>) {
+//         self.peer = Some(peer);
+//     }
+
+//     pub fn check_read(&mut self) -> bool {
+//         if !self.in_active {
+//             return false;
+//         }
+//         if self.state != PipeState::Active && self.state != PipeState::WaitingForDelimiter {
+//             return false;
+//         }
+
+//         if let Some(in_pipe) = &mut self.in_pipe {
+//             if !in_pipe.check_read() {
+//                 self.in_active = false;
+//                 return false;
+//             }
+
+//             if in_pipe.probe(Msg::is_delimiter) {
+//                 let mut msg = Msg::new();
+//                 in_pipe.read(&mut msg);
+//                 self.process_delimiter();
+//                 return false;
+//             }
+//         }
+
+//         true
+//     }
+
+//     fn compute_lwm(hwm: i32) -> i32 {
+//         (hwm + 1) / 2
+//     }
+
+//     fn process_delimiter(&mut self) {
+//         match self.state {
+//             PipeState::Active => {
+//                 self.state = PipeState::DelimiterReceived;
+//             }
+//             PipeState::WaitingForDelimiter => {
+//                 self.rollback();
+//                 self.out_pipe = None;
+//                 // send_pipe_term_ack would go here
+//                 self.state = PipeState::TermAckSent;
+//             }
+//             _ => {}
+//         }
+//     }
+
+//     fn rollback(&mut self) {
+//         if let Some(out_pipe) = &mut self.out_pipe {
+//             while let Some(msg) = out_pipe.queue.pop_back() {
+//                 if msg.flags() & MsgFlags::MORE as u32 != 0 {
+//                     // Close message
+//                 }
+//             }
+//         }
+//     }
+// }
 
 // Create a pair of pipes for bidirectional communication
 pub fn create_pipe_pair(

@@ -1,7 +1,8 @@
 
 use std::ptr::null_mut;
 use std::os::raw::c_void;
-use crate::ctx::Ctx;
+use crate::context::Context;
+use crate::sockaddr_storage::{zmq_sockaddr_storage, zmq_socklen_t};
 use crate::tcp_address::TcpAddress;
 use crate::udp_address::UdpAddress;
 // mod ctx;
@@ -17,7 +18,7 @@ mod vmci_address;
 pub struct Address {
     protocol: String,
     address: String,
-    parent: *mut Ctx,
+    parent: *mut Context,
     resolved: ResolvedAddress,
 }
 
@@ -38,7 +39,7 @@ enum ResolvedAddress {
 }
 
 impl Address {
-    pub fn new(protocol: &str, address: &str, parent: *mut Ctx) -> Address {
+    pub fn new(protocol: &str, address: &str, parent: *mut Context) -> Address {
         Address {
             protocol: protocol.to_string(),
             address: address.to_string(),
@@ -162,8 +163,8 @@ impl Drop for Address {
     }
 }
 
-pub fn get_socket_address(fd: i32, socket_end: SocketEnd, ss: &mut libc::sockaddr_storage) -> usize {
-    let mut sl = std::mem::size_of::<libc::sockaddr_storage>() as libc::socklen_t;
+pub fn get_socket_address(fd: i32, socket_end: SocketEnd, ss: &mut zmq_sockaddr_storage) -> usize {
+    let mut sl = std::mem::size_of::<zmq_sockaddr_storage>() as zmq_socklen_t;
 
     let rc = match socket_end {
         SocketEnd::Local => unsafe { libc::getsockname(fd, ss as *mut _ as *mut _, &mut sl) },
@@ -183,7 +184,7 @@ pub enum SocketEnd {
 }
 
 pub fn get_socket_name<T: ToString>(fd: i32, socket_end: SocketEnd) -> String {
-    let mut ss: libc::sockaddr_storage = unsafe { std::mem::zeroed() };
+    let mut ss: zmq_sockaddr_storage = unsafe { std::mem::zeroed() };
     let sl = get_socket_address(fd, socket_end, &mut ss);
     if sl == 0 {
         return String::new();

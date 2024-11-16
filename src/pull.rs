@@ -1,20 +1,17 @@
 use crate::{
-    context::Context,
-    fair_queue::FairQueue,
-    message::Message,
-    pipe::Pipe,
-    socket::{Socket, SocketBase},
+    context::Context, fair_queue::FairQueue, message::Message, pipe::Pipe, socket_base::SocketBase,
+    ZMQ_PULL,
 };
 
 /// PULL socket implementation
-pub struct Pull {
+pub struct Pull<T: Pipe> {
     /// Fair queuing object for inbound pipes
-    fair_queue: FairQueue,
+    fair_queue: FairQueue<T>,
     /// Base socket functionality
     socket: SocketBase,
 }
 
-impl Pull {
+impl<T> Pull<T> {
     pub fn new(parent: &Context, tid: u32, sid: i32) -> Self {
         Self {
             fair_queue: FairQueue::new(),

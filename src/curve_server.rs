@@ -1,6 +1,11 @@
 use sodiumoxide::crypto::box_;
 use sodiumoxide::crypto::secretbox;
 
+use crate::err::ZmqError;
+use crate::message::Message;
+use crate::options::Options;
+use crate::session_base::SessionBase;
+
 // Constants mapped from C++
 const CRYPTO_BOX_PUBLICKEYBYTES: usize = 32;
 const CRYPTO_BOX_SECRETKEYBYTES: usize = 32;
@@ -34,10 +39,15 @@ pub struct CurveServer {
 }
 
 impl CurveServer {
-    pub fn new(session: &SessionBase, peer_address: String, options: &Options, downgrade_sub: bool) -> Self {
+    pub fn new(
+        session: &SessionBase,
+        peer_address: String,
+        options: &Options,
+        downgrade_sub: bool,
+    ) -> Self {
         let secret_key = options.curve_secret_key;
         let (public_key, secret_key) = box_::gen_keypair();
-        
+
         CurveServer {
             state: State::WaitingForHello,
             secret_key,
@@ -52,7 +62,7 @@ impl CurveServer {
         }
     }
 
-    pub fn next_handshake_command(&mut self, msg: &mut Message) -> Result<(), Error> {
+    pub fn next_handshake_command(&mut self, msg: &mut Message) -> Result<(), ZmqError> {
         match self.state {
             State::SendingWelcome => {
                 self.produce_welcome(msg)?;
@@ -69,27 +79,27 @@ impl CurveServer {
                 self.state = State::ErrorSent;
                 Ok(())
             }
-            _ => Err(Error::WouldBlock),
+            _ => Err(ZmqError::WouldBlock),
         }
     }
 
-    pub fn process_handshake_command(&mut self, msg: &Message) -> Result<(), Error> {
+    pub fn process_handshake_command(&mut self, msg: &Message) -> Result<(), ZmqError> {
         match self.state {
             State::WaitingForHello => self.process_hello(msg),
             State::WaitingForInitiate => self.process_initiate(msg),
-            _ => Err(Error::Protocol("Invalid handshake command")),
+            _ => Err(ZmqError::Protocol("Invalid handshake command")),
         }
     }
 
-    fn process_hello(&mut self, msg: &Message) -> Result<(), Error> {
+    fn process_hello(&mut self, msg: &Message) -> Result<(), ZmqError> {
         let data = msg.data();
         if data.len() != 200 || !data.starts_with(b"\x05HELLO") {
-            return Err(Error::Protocol("Invalid HELLO message"));
+            return Err(ZmqError::Protocol("Invalid HELLO message"));
         }
 
         // Version checking
         if data[6] != 1 || data[7] != 0 {
-            return Err(Error::Protocol("Unknown version number"));
+            return Err(ZmqError::Protocol("Unknown version number"));
         }
 
         // Save client's public key
@@ -113,7 +123,7 @@ impl CurveServer {
 }
 
 // Helper functions
-fn create_nonce(prefix: &str, suffix: &[u8]) -> Result<box_::Nonce, Error> {
+fn create_nonce(prefix: &str, suffix: &[u8]) -> Result<box_::Nonce, ZmqError> {
     let mut nonce = [0u8; CRYPTO_BOX_NONCEBYTES];
     nonce[..prefix.len()].copy_from_slice(prefix.as_bytes());
     nonce[prefix.len()..prefix.len() + suffix.len()].copy_from_slice(suffix);

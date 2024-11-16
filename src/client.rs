@@ -1,23 +1,23 @@
 /* SPDX-License-Identifier: MPL-2.0 */
-use libc::EINVAL;
-use crate::ctx::Ctx;
-use crate::fq::FairQueue;
+use crate::context::Context;
+use crate::fair_queue::FairQueue;
 use crate::lb::Lb;
-use crate::msg::*;
+use crate::message::*;
 use crate::options::Options;
 use crate::pipe::Pipe;
 use crate::session_base::ZMQ_CLIENT;
 use crate::socket_base::SocketBase;
+use libc::EINVAL;
 
 pub struct Client<T: Pipe> {
     options: Options,
-    fq: FairQueue<T: Pipe>,
+    fq: FairQueue<T>,
     lb: Lb,
-    socket_base: SocketBase
+    socket_base: SocketBase,
 }
 
-impl Client<T> {
-    pub fn new(parent: &Ctx, tid: u32, sid: i32) -> Self {
+impl<T: Pipe> Client<T> {
+    pub fn new(parent: &Context, tid: u32, sid: i32) -> Self {
         let mut options = Options::default();
         options.can_send_hello_msg = true;
         options.can_recv_hiccup_msg = true;
@@ -26,10 +26,9 @@ impl Client<T> {
             options,
             fq: FairQueue::new(),
             lb: Lb::new(),
-            socket_base: SocketBase::new(parent, tid, sid, false)
+            socket_base: SocketBase::new(parent, tid, sid, false),
         };
         c.socket_base.options.type_ = ZMQ_CLIENT;
-        
     }
 
     pub fn attach_pipe(&mut self, pipe: &Pipe, subscribe_to_all: bool, locally_initiated: bool) {
@@ -42,7 +41,7 @@ impl Client<T> {
         self.lb.attach(pipe);
     }
 
-    pub fn send(&mut self, msg: &mut Msg) -> Result<(), i32> {
+    pub fn send(&mut self, msg: &mut Message) -> Result<(), i32> {
         // CLIENT sockets do not allow multipart data (ZMQ_SNDMORE)
         if msg.flags() & MsgFlags::More != 0 {
             return Err(EINVAL);
@@ -50,7 +49,7 @@ impl Client<T> {
         self.lb.sendpipe(msg, None)
     }
 
-    pub fn recv(&mut self, msg: &mut Msg) -> Result<(), i32> {
+    pub fn recv(&mut self, msg: &mut Message) -> Result<(), i32> {
         let mut rc = self.fq.recvpipe(msg, None);
 
         // Drop any messages with more flag

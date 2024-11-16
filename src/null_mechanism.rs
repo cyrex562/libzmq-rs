@@ -1,6 +1,8 @@
 use std::ffi::c_void;
-use std::mem;
-use crate::msg::Msg;
+use libc::c_int;
+
+use crate::constants::{ZMQ_EAGAIN, ZMQ_EFSM, ZMQ_EPROTO};
+use crate::message::Message;
 use crate::options::Options;
 
 const ERROR_COMMAND_NAME: &[u8] = b"\x05ERROR";
@@ -44,7 +46,7 @@ impl NullMechanism {
         }
     }
 
-    pub fn next_handshake_command(&mut self, msg: &mut Msg) -> Result<(), i32> {
+    pub fn next_handshake_command(&mut self, msg: &mut Message) -> Result<(), i32> {
         if self.ready_command_sent || self.error_command_sent {
             return Err(libc::EAGAIN);
         }
@@ -78,7 +80,7 @@ impl NullMechanism {
                 self.make_error_command(msg)?;
                 return Ok(());
             }
-            return Err(libc::EAGAIN);
+            return Err(ZMQ_EAGAIN);
         }
 
         self.make_command_with_basic_properties(msg, READY_COMMAND_NAME)?;
@@ -86,10 +88,10 @@ impl NullMechanism {
         Ok(())
     }
 
-    pub fn process_handshake_command(&mut self, msg: &mut Msg) -> Result<(), i32> {
+    pub fn process_handshake_command(&mut self, msg: &mut Message) -> Result<(), i32> {
         if self.ready_command_received || self.error_command_received {
             self.handle_protocol_error();
-            return Err(libc::EPROTO);
+            return Err(ZMQ_EPROTO);
         }
 
         let data = msg.data();
@@ -105,9 +107,9 @@ impl NullMechanism {
         }
     }
 
-    pub fn zap_msg_available(&mut self) -> Result<(), i32> {
+    pub fn zap_msg_available(&mut self) -> Result<(), c_int> {
         if self.zap_reply_received {
-            return Err(libc::EFSM);
+            return Err(ZMQ_EFSM);
         }
         match self.receive_and_process_zap_reply() {
             Ok(_) => {

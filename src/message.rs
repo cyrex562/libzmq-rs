@@ -1,13 +1,14 @@
 use std::error::Error;
-use std::sync::atomic::{AtomicI32, AtomicUsize, Ordering};
-use std::ptr;
 use std::mem;
+use std::ptr;
 use std::slice;
+use std::sync::atomic::{AtomicI32, AtomicUsize, Ordering};
 
 const CMD_TYPE_MASK: u8 = 0x1c;
 const ZMQ_GROUP_MAX_LENGTH: usize = 255; // From zmq.h
 const MSG_T_SIZE: usize = 64;
-const MAX_VSM_SIZE: usize = MSG_T_SIZE - (mem::size_of::<*mut Metadata>() + 3 + 16 + mem::size_of::<u32>());
+const MAX_VSM_SIZE: usize =
+    MSG_T_SIZE - (mem::size_of::<*mut Metadata>() + 3 + 16 + mem::size_of::<u32>());
 
 // Command names
 const CANCEL_CMD_NAME: &[u8] = b"\x06CANCEL";
@@ -70,30 +71,20 @@ struct LongGroup {
 }
 
 #[derive(Debug)]
-pub struct Msg {
+pub struct Message {
     metadata: Option<Box<Metadata>>,
     flags: u8,
     routing_id: u32,
     pub(crate) group: GroupStorage,
-    content: MsgContent,
+    content: MessageContent,
 }
 
 #[derive(Debug)]
-enum MsgContent {
-    Vsm {
-        data: [u8; MAX_VSM_SIZE],
-        size: u8,
-    },
-    Lmsg {
-        content: Box<Content>,
-    },
-    Cmsg {
-        data: *mut u8,
-        size: usize,
-    },
-    Zclmsg {
-        content: Box<Content>,
-    },
+enum MessageContent {
+    Vsm { data: [u8; MAX_VSM_SIZE], size: u8 },
+    Lmsg { content: Box<Content> },
+    Cmsg { data: *mut u8, size: usize },
+    Zclmsg { content: Box<Content> },
     Delimiter,
     Join,
     Leave,
@@ -114,14 +105,14 @@ pub enum MsgFlags {
     Shared = 128,
 }
 
-impl Msg {
+impl Message {
     pub fn new() -> Self {
-        Msg {
+        Message {
             metadata: None,
             flags: 0,
             routing_id: 0,
             group: GroupStorage::Short([0; 15]),
-            content: MsgContent::Vsm {
+            content: MessageContent::Vsm {
                 data: [0; MAX_VSM_SIZE],
                 size: 0,
             },
@@ -131,7 +122,7 @@ impl Msg {
     pub fn with_size(size: usize) -> Result<Self, &'static str> {
         if size <= MAX_VSM_SIZE {
             let mut msg = Self::new();
-            msg.content = MsgContent::Vsm {
+            msg.content = MessageContent::Vsm {
                 data: [0; MAX_VSM_SIZE],
                 size: size as u8,
             };
@@ -144,17 +135,17 @@ impl Msg {
                 hint: ptr::null_mut(),
                 ref_count: AtomicUsize::new(1),
             });
-            
+
             if content.data.is_null() {
                 return Err("Memory allocation failed");
             }
 
-            Ok(Msg {
+            Ok(Message {
                 metadata: None,
                 flags: 0,
                 routing_id: 0,
                 group: GroupStorage::Short([0; 15]),
-                content: MsgContent::Lmsg { content },
+                content: MessageContent::Lmsg { content },
             })
         }
     }
@@ -167,14 +158,12 @@ impl Msg {
 
     pub fn data(&self) -> &[u8] {
         match &self.content {
-            MsgContent::Vsm { data, size } => &data[..*size as usize],
-            MsgContent::Lmsg { content } => unsafe {
+            MessageContent::Vsm { data, size } => &data[..*size as usize],
+            MessageContent::Lmsg { content } => unsafe {
                 slice::from_raw_parts(content.data, content.size)
             },
-            MsgContent::Cmsg { data, size } => unsafe {
-                slice::from_raw_parts(*data, *size)
-            },
-            MsgContent::Zclmsg { content } => unsafe {
+            MessageContent::Cmsg { data, size } => unsafe { slice::from_raw_parts(*data, *size) },
+            MessageContent::Zclmsg { content } => unsafe {
                 slice::from_raw_parts(content.data, content.size)
             },
             _ => &[],
@@ -183,14 +172,14 @@ impl Msg {
 
     pub fn data_mut(&mut self) -> &mut [u8] {
         match &mut self.content {
-            MsgContent::Vsm { data, size } => &mut data[..*size as usize],
-            MsgContent::Lmsg { content } => unsafe {
+            MessageContent::Vsm { data, size } => &mut data[..*size as usize],
+            MessageContent::Lmsg { content } => unsafe {
                 slice::from_raw_parts_mut(content.data, content.size)
             },
-            MsgContent::Cmsg { data, size } => unsafe {
+            MessageContent::Cmsg { data, size } => unsafe {
                 slice::from_raw_parts_mut(*data, *size)
             },
-            MsgContent::Zclmsg { content } => unsafe {
+            MessageContent::Zclmsg { content } => unsafe {
                 slice::from_raw_parts_mut(content.data, content.size)
             },
             _ => &mut [],
@@ -199,15 +188,15 @@ impl Msg {
 
     pub fn size(&self) -> usize {
         match &self.content {
-            MsgContent::Vsm { size, .. } => *size as usize,
-            MsgContent::Lmsg { content } => content.size,
-            MsgContent::Cmsg { size, .. } => *size,
-            MsgContent::Zclmsg { content } => content.size,
+            MessageContent::Vsm { size, .. } => *size as usize,
+            MessageContent::Lmsg { content } => content.size,
+            MessageContent::Cmsg { size, .. } => *size,
+            MessageContent::Zclmsg { content } => content.size,
             _ => 0,
         }
     }
 
-    fn copy_from_slice(&mut self, data: &[u8]) {
+    pub fn copy_from_slice(&mut self, data: &[u8]) {
         let dst = self.data_mut();
         dst.copy_from_slice(data);
     }
@@ -264,16 +253,20 @@ impl Msg {
                 std::str::from_utf8(&group[..len]).unwrap_or("")
             }
             GroupStorage::Long(group) => {
-                let len = group.group.iter().position(|&x| x == 0).unwrap_or(ZMQ_GROUP_MAX_LENGTH);
+                let len = group
+                    .group
+                    .iter()
+                    .position(|&x| x == 0)
+                    .unwrap_or(ZMQ_GROUP_MAX_LENGTH);
                 std::str::from_utf8(&group.group[..len]).unwrap_or("")
             }
         }
     }
-    
+
     pub fn has_more(&self) -> bool {
         self.has_flag(MsgFlags::More)
     }
-    
+
     pub fn check(&self) -> bool {
         self.has_flag(MsgFlags::Command)
     }
@@ -327,21 +320,27 @@ impl Msg {
     }
 }
 
-impl Drop for Msg {
+impl Drop for Message {
     fn drop(&mut self) {
         // Handle cleanup of content
         match &mut self.content {
-            MsgContent::Lmsg { content } => {
-                if !self.has_flag(MsgFlags::Shared) || 
-                   content.ref_count.fetch_sub(1, Ordering::SeqCst) == 1 {
-                    unsafe { libc::free(content.data as *mut libc::c_void); }
+            MessageContent::Lmsg { content } => {
+                if !self.has_flag(MsgFlags::Shared)
+                    || content.ref_count.fetch_sub(1, Ordering::SeqCst) == 1
+                {
+                    unsafe {
+                        libc::free(content.data as *mut libc::c_void);
+                    }
                 }
             }
-            MsgContent::Zclmsg { content } => {
-                if !self.has_flag(MsgFlags::Shared) || 
-                   content.ref_count.fetch_sub(1, Ordering::SeqCst) == 1 {
+            MessageContent::Zclmsg { content } => {
+                if !self.has_flag(MsgFlags::Shared)
+                    || content.ref_count.fetch_sub(1, Ordering::SeqCst) == 1
+                {
                     if let Some(ffn) = content.ffn {
-                        unsafe { ffn(content.data, content.hint); }
+                        unsafe {
+                            ffn(content.data, content.hint);
+                        }
                     }
                 }
             }

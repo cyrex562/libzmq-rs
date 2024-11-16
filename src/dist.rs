@@ -1,4 +1,4 @@
-use std::mem;
+use crate::message::Message;
 
 // Forward declarations for external types we depend on
 pub trait Pipe {
@@ -15,35 +15,35 @@ pub trait Pipe {
 
 // impl Message {
 //     const MORE: u32 = 0x1;
-// 
+//
 //     pub fn new() -> Self {
 //         Message {
 //             flags: 0,
 //             refs: 0,
 //         }
 //     }
-// 
+//
 //     pub fn flags(&self) -> u32 {
 //         self.flags
 //     }
-// 
+//
 //     pub fn is_vsm(&self) -> bool {
 //         // Simplified VSM check
 //         false
 //     }
-// 
+//
 //     pub fn add_refs(&mut self, refs: i32) {
 //         self.refs += refs;
 //     }
-// 
+//
 //     pub fn rm_refs(&mut self, refs: i32) {
 //         self.refs -= refs;
 //     }
-// 
+//
 //     pub fn close(&mut self) -> bool {
 //         true
 //     }
-// 
+//
 //     pub fn init(&mut self) -> bool {
 //         true
 //     }
@@ -52,16 +52,16 @@ pub trait Pipe {
 pub struct Dist {
     // List of outbound pipes
     pipes: Vec<Box<dyn Pipe>>,
-    
+
     // Number of all the pipes to send the next message to
     matching: usize,
-    
+
     // Number of active pipes at the beginning of the pipes array
     active: usize,
-    
+
     // Number of pipes eligible for sending messages
     eligible: usize,
-    
+
     // True if we are in the middle of a multipart message
     more: bool,
 }
@@ -111,7 +111,7 @@ impl Dist {
     pub fn reverse_match(&mut self) {
         let prev_matching = self.matching;
         self.unmatch();
-        
+
         for i in prev_matching..self.eligible {
             self.pipes.swap(i, self.matching);
             self.matching += 1;

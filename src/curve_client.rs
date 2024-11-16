@@ -1,9 +1,3 @@
-use crate::{
-    mechanism::{Mechanism, Status},
-    message::Message,
-    session::Session,
-    options::Options,
-};
 
 #[cfg(feature = "curve")]
 pub struct CurveClient {

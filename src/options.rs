@@ -66,10 +66,10 @@ pub struct Options {
     reconnect_stop: i32,
 
     // Minimum interval between attempts to reconnect, in milliseconds
-    reconnect_ivl: i32,
+    pub reconnect_ivl: i32,
 
     // Maximum interval between attempts to reconnect, in milliseconds
-    reconnect_ivl_max: i32,
+    pub reconnect_ivl_max: i32,
 
     // Maximum backlog for pending connections
     backlog: i32,
@@ -97,7 +97,7 @@ pub struct Options {
     recv_routing_id: bool,
 
     // If true, router socket accepts non-zmq tcp connections
-    raw_socket: bool,
+    pub raw_socket: bool,
     raw_notify: bool,
 
     // Address of SOCKS proxy
@@ -128,12 +128,12 @@ pub struct Options {
     zap_domain: String,
 
     // Security credentials for PLAIN mechanism
-    plain_username: String,
-    plain_password: String,
+    pub plain_username: String,
+    pub plain_password: String,
 
     // Security credentials for CURVE mechanism
     curve_public_key: [u8; CURVE_KEYSIZE],
-    curve_secret_key: [u8; CURVE_KEYSIZE],
+    pub curve_secret_key: [u8; CURVE_KEYSIZE],
     curve_server_key: [u8; CURVE_KEYSIZE],
 
     // GSSAPI security configuration

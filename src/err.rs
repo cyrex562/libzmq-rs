@@ -1,3 +1,6 @@
+use core::fmt;
+use std::error::Error;
+
 #[cfg(windows)]
 use winapi::shared::winerror::*;
 #[cfg(windows)]
@@ -27,10 +30,42 @@ pub enum ZmqError {
     #[cfg(windows)]
     InProgress,
     SystemError(std::io::Error),
+    InvalidInput,
 }
 
-impl ZmqError {
-    pub fn to_string(&self) -> &'static str {
+impl fmt::Display for ZmqError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ZmqError::Fsm => write!(f, "Operation cannot be accomplished in current state"),
+            ZmqError::NoCompatProto => {
+                write!(f, "The protocol is not compatible with the socket type")
+            }
+            ZmqError::Term => write!(f, "Context was terminated"),
+            ZmqError::MThread => write!(f, "No thread available"),
+            ZmqError::HostUnreach => write!(f, "Host unreachable"),
+            #[cfg(windows)]
+            ZmqError::NotSupported => write!(f, "Not supported"),
+            #[cfg(windows)]
+            ZmqError::ProtoNotSupported => write!(f, "Protocol not supported"),
+            #[cfg(windows)]
+            ZmqError::NoBuffers => write!(f, "No buffer space available"),
+            #[cfg(windows)]
+            ZmqError::NetDown => write!(f, "Network is down"),
+            #[cfg(windows)]
+            ZmqError::AddrInUse => write!(f, "Address in use"),
+            #[cfg(windows)]
+            ZmqError::AddrNotAvail => write!(f, "Address not available"),
+            #[cfg(windows)]
+            ZmqError::ConnRefused => write!(f, "Connection refused"),
+            #[cfg(windows)]
+            ZmqError::InProgress => write!(f, "Operation in progress"),
+            ZmqError::SystemError(e) => write!(f, "{}", e),
+        }
+    }
+}
+
+impl Error for ZmqError {
+    fn description(&self) -> &str {
         match self {
             ZmqError::Fsm => "Operation cannot be accomplished in current state",
             ZmqError::NoCompatProto => "The protocol is not compatible with the socket type",
@@ -53,7 +88,7 @@ impl ZmqError {
             ZmqError::ConnRefused => "Connection refused",
             #[cfg(windows)]
             ZmqError::InProgress => "Operation in progress",
-            ZmqError::SystemError(e) => e.to_string().as_str(),
+            ZmqError::SystemError(e) => e.description(),
         }
     }
 }
@@ -61,7 +96,7 @@ impl ZmqError {
 #[cfg(windows)]
 pub fn wsa_error_to_errno(errcode: i32) -> std::io::Error {
     use std::io::ErrorKind;
-    
+
     let kind = match errcode {
         WSAEINTR => ErrorKind::Interrupted,
         WSAEBADF => ErrorKind::InvalidInput,
@@ -86,7 +121,7 @@ pub fn wsa_error_to_errno(errcode: i32) -> std::io::Error {
         WSAEHOSTUNREACH => ErrorKind::NotConnected,
         _ => ErrorKind::Other,
     };
-    
+
     std::io::Error::new(kind, "Windows socket error")
 }
 
@@ -94,9 +129,10 @@ pub fn wsa_error_to_errno(errcode: i32) -> std::io::Error {
 macro_rules! zmq_assert {
     ($cond:expr) => {
         if !$cond {
-            eprintln!("Assertion failed: {} ({}:{})", 
-                stringify!($cond), 
-                file!(), 
+            eprintln!(
+                "Assertion failed: {} ({}:{})",
+                stringify!($cond),
+                file!(),
                 line!()
             );
             std::process::abort();
@@ -109,11 +145,7 @@ macro_rules! errno_assert {
     ($cond:expr) => {
         if !$cond {
             let err = std::io::Error::last_os_error();
-            eprintln!("{} ({}:{})", 
-                err, 
-                file!(), 
-                line!()
-            );
+            eprintln!("{} ({}:{})", err, file!(), line!());
             std::process::abort();
         }
     };

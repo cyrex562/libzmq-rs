@@ -1,22 +1,14 @@
-use std::net::TcpListener;
-use std::os::unix::io::RawFd;
-use std::os::unix::io::AsRawFd;
-
-pub struct Options {
-    pub raw_socket: bool,
-    pub affinity: u64,
-    // ... other options
-}
+use crate::{options::Options, types::ZmqRawFd};
 
 pub trait IoObject {
-    fn add_fd(&mut self, fd: RawFd) -> RawFd;
-    fn rm_fd(&mut self, handle: RawFd);
-    fn set_pollin(&mut self, handle: RawFd);
+    fn add_fd(&mut self, fd: ZmqRawFd) -> ZmqRawFd;
+    fn rm_fd(&mut self, handle: ZmqRawFd);
+    fn set_pollin(&mut self, handle: ZmqRawFd);
 }
 
 pub struct StreamListenerBase {
-    socket: RawFd,
-    handle: Option<RawFd>,
+    socket: ZmqRawFd,
+    handle: Option<ZmqRawFd>,
     endpoint: String,
     options: Options,
 }
@@ -42,7 +34,7 @@ impl StreamListenerBase {
         Ok(self.get_socket_name(self.socket, SocketEnd::Local))
     }
 
-    fn get_socket_name(&self, fd: RawFd, socket_end: SocketEnd) -> String {
+    fn get_socket_name(&self, fd: ZmqRawFd, socket_end: SocketEnd) -> String {
         // Implementation would go here
         String::new()
     }
@@ -69,7 +61,7 @@ impl StreamListenerBase {
         Ok(())
     }
 
-    pub fn create_engine(&mut self, fd: RawFd) {
+    pub fn create_engine(&mut self, fd: ZmqRawFd) {
         let local_endpoint = self.get_socket_name(fd, SocketEnd::Local);
         let remote_endpoint = self.get_socket_name(fd, SocketEnd::Remote);
 
@@ -83,16 +75,16 @@ impl StreamListenerBase {
 }
 
 impl IoObject for StreamListenerBase {
-    fn add_fd(&mut self, fd: RawFd) -> RawFd {
+    fn add_fd(&mut self, fd: ZmqRawFd) -> ZmqRawFd {
         // Implementation
         fd
     }
 
-    fn rm_fd(&mut self, handle: RawFd) {
+    fn rm_fd(&mut self, handle: ZmqRawFd) {
         // Implementation
     }
 
-    fn set_pollin(&mut self, handle: RawFd) {
+    fn set_pollin(&mut self, handle: ZmqRawFd) {
         // Implementation
     }
 }

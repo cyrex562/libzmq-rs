@@ -1,5 +1,5 @@
 use std::sync::Mutex;
-use crate::msg::Msg;
+use crate::message::Message;
 // Message type similar to the C++ msg_t
 // #[derive(Clone)]
 // pub struct Message {
@@ -73,12 +73,12 @@ impl<T: Clone> DBuffer<T> {
 }
 
 // Specific implementation for Message type
-impl DBuffer<Msg> {
+impl DBuffer<Message> {
     pub fn new_message_buffer() -> Self {
-        Self::new(Msg::new())
+        Self::new(Message::new())
     }
 
-    pub fn write_message(&mut self, msg: Msg) {
+    pub fn write_message(&mut self, msg: Message) {
         assert!(msg.check());
         self.write(msg);
     }

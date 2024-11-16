@@ -7,26 +7,15 @@ use std::marker::PhantomData;
 // different ID. The item itself has to be derived from instantiations of
 // array_item_t template for all relevant IDs.
 
-pub struct ArrayItem<ID> {
-    array_index: Cell<isize>,
-    _marker: PhantomData<ID>,
-}
 
-impl<ID> ArrayItem<ID> {
-    pub fn new() -> Self {
-        ArrayItem {
-            array_index: Cell::new(-1),
-            _marker: PhantomData,
-        }
-    }
+pub trait ArrayItem<ID> {
+    // array_index: Cell<isize>,
+    // _marker: PhantomData<ID>,
+    fn get_array_index() -> Cell<isize>;
+    fn set_array_index(&self, index: isize);
 
-    pub fn set_array_index(&self, index: isize) {
-        self.array_index.set(index);
-    }
-
-    pub fn get_array_index(&self) -> isize {
-        self.array_index.get()
-    }
+    fn get_marker(&self) -> PhantomData<ID>;
+    fn set_marker(&mut self, in_phantom_data: &mut PhantomData<ID>);
 }
 
 pub struct Array<T, ID> {

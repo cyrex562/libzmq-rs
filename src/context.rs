@@ -93,7 +93,7 @@ impl ThreadContext {
 }
 
 // Main context
-pub struct Ctx {
+pub struct Context {
     tag: u32,
     starting: AtomicBool,
     terminating: AtomicBool,
@@ -122,9 +122,9 @@ pub struct Ctx {
     thread_ctx: ThreadContext,
 }
 
-impl Ctx {
+impl Context {
     pub fn new() -> Self {
-        Ctx {
+        Context {
             tag: ZMQ_CTX_TAG_VALUE_GOOD,
             starting: AtomicBool::new(true),
             terminating: AtomicBool::new(false),
@@ -149,6 +149,15 @@ impl Ctx {
             
             thread_ctx: ThreadContext::new(),
         }
+    }
+
+    pub fn get_socket_type() -> i32 {
+        // if socket_id < 0 || socket_id >= self.sockets.len() as i32 {
+        //     return -1;
+        // }
+
+        // self.sockets[socket_id as usize].options.type_
+        todo!()
     }
 
     pub fn check_tag(&self) -> bool {

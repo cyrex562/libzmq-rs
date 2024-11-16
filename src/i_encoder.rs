@@ -1,4 +1,4 @@
-use crate::msg::Msg;
+use crate::message::Message;
 
 /// Interface to be implemented by message encoder.
 pub trait IEncoder {
@@ -9,5 +9,5 @@ pub trait IEncoder {
     fn encode(&mut self, buffer: Option<&mut [u8]>, size: usize) -> usize;
 
     /// Load a new message into encoder.
-    fn load_msg(&mut self, msg: &mut Msg);
+    fn load_msg(&mut self, msg: &mut Message);
 }

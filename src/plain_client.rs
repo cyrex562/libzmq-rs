@@ -1,4 +1,14 @@
-use std::mem;
+use crate::{
+    constants::{
+        ZMQ_PROTOCOL_ERROR_ZMTP_INVALID_METADATA, ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR,
+        ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_WELCOME,
+        ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND,
+    },
+    mechanism::Status,
+    message::Message,
+    options::Options,
+    session_base::SessionBase,
+};
 
 // Constants from plain_common
 const WELCOME_PREFIX: &[u8] = b"WELCOME";
@@ -26,7 +36,7 @@ enum State {
 pub struct PlainClient {
     state: State,
     options: Options,
-    session: SessionBase,
+    session: Box<dyn SessionBase>,
 }
 
 impl PlainClient {
@@ -56,20 +66,17 @@ impl PlainClient {
 
     pub fn process_handshake_command(&mut self, msg: &mut Message) -> Result<(), i32> {
         let data = msg.data();
-        
-        let result = if data.len() >= WELCOME_PREFIX_LEN && 
-                       data.starts_with(WELCOME_PREFIX) {
+
+        let result = if data.len() >= WELCOME_PREFIX_LEN && data.starts_with(WELCOME_PREFIX) {
             self.process_welcome(data)
-        } else if data.len() >= READY_PREFIX_LEN && 
-                  data.starts_with(READY_PREFIX) {
+        } else if data.len() >= READY_PREFIX_LEN && data.starts_with(READY_PREFIX) {
             self.process_ready(&data[READY_PREFIX_LEN..])
-        } else if data.len() >= ERROR_PREFIX_LEN && 
-                  data.starts_with(ERROR_PREFIX) {
+        } else if data.len() >= ERROR_PREFIX_LEN && data.starts_with(ERROR_PREFIX) {
             self.process_error(&data[ERROR_PREFIX_LEN..])
         } else {
             self.session.get_socket().event_handshake_failed_protocol(
                 self.session.get_endpoint(),
-                ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND
+                ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND,
             );
             Err(libc::EPROTO)
         };
@@ -97,18 +104,18 @@ impl PlainClient {
         assert!(username.len() <= u8::MAX as usize);
         assert!(password.len() <= u8::MAX as usize);
 
-        let command_size = HELLO_PREFIX_LEN + BRIEF_LEN_SIZE + username.len() +
-                         BRIEF_LEN_SIZE + password.len();
+        let command_size =
+            HELLO_PREFIX_LEN + BRIEF_LEN_SIZE + username.len() + BRIEF_LEN_SIZE + password.len();
 
         msg.init_size(command_size)?;
         let mut data = Vec::with_capacity(command_size);
-        
+
         data.extend_from_slice(HELLO_PREFIX);
         data.push(username.len() as u8);
         data.extend_from_slice(username.as_bytes());
         data.push(password.len() as u8);
         data.extend_from_slice(password.as_bytes());
-        
+
         msg.set_data(data);
         Ok(())
     }
@@ -121,7 +128,7 @@ impl PlainClient {
         if self.state != State::WaitingForWelcome {
             self.session.get_socket().event_handshake_failed_protocol(
                 self.session.get_endpoint(),
-                ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND
+                ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND,
             );
             return Err(libc::EPROTO);
         }
@@ -129,7 +136,7 @@ impl PlainClient {
         if data.len() != WELCOME_PREFIX_LEN {
             self.session.get_socket().event_handshake_failed_protocol(
                 self.session.get_endpoint(),
-                ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_WELCOME
+                ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_WELCOME,
             );
             return Err(libc::EPROTO);
         }
@@ -142,7 +149,7 @@ impl PlainClient {
         if self.state != State::WaitingForReady {
             self.session.get_socket().event_handshake_failed_protocol(
                 self.session.get_endpoint(),
-                ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND
+                ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND,
             );
             return Err(libc::EPROTO);
         }
@@ -155,7 +162,7 @@ impl PlainClient {
             Err(e) => {
                 self.session.get_socket().event_handshake_failed_protocol(
                     self.session.get_endpoint(),
-                    ZMQ_PROTOCOL_ERROR_ZMTP_INVALID_METADATA
+                    ZMQ_PROTOCOL_ERROR_ZMTP_INVALID_METADATA,
                 );
                 Err(e)
             }
@@ -166,7 +173,7 @@ impl PlainClient {
         if self.state != State::WaitingForWelcome && self.state != State::WaitingForReady {
             self.session.get_socket().event_handshake_failed_protocol(
                 self.session.get_endpoint(),
-                ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND
+                ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND,
             );
             return Err(libc::EPROTO);
         }
@@ -174,7 +181,7 @@ impl PlainClient {
         if data.len() < BRIEF_LEN_SIZE {
             self.session.get_socket().event_handshake_failed_protocol(
                 self.session.get_endpoint(),
-                ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR
+                ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR,
             );
             return Err(libc::EPROTO);
         }
@@ -183,14 +190,14 @@ impl PlainClient {
         if error_reason_len > data.len() - BRIEF_LEN_SIZE {
             self.session.get_socket().event_handshake_failed_protocol(
                 self.session.get_endpoint(),
-                ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR
+                ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR,
             );
             return Err(libc::EPROTO);
         }
 
         let error_reason = &data[BRIEF_LEN_SIZE..BRIEF_LEN_SIZE + error_reason_len];
         self.handle_error_reason(error_reason)?;
-        
+
         self.state = State::ErrorCommandReceived;
         Ok(())
     }

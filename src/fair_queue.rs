@@ -1,5 +1,5 @@
 use std::error::Error;
-use crate::msg::Msg;
+use crate::message::Message;
 // #[derive(Debug)]
 // pub struct Message {
 //     flags: u32,
@@ -20,7 +20,7 @@ use crate::msg::Msg;
 // }
 
 pub trait Pipe {
-    fn read(&mut self, msg: &mut Msg) -> bool;
+    fn read(&mut self, msg: &mut Message) -> bool;
     fn check_read(&self) -> bool;
 }
 
@@ -64,12 +64,12 @@ impl<T: Pipe> FairQueue<T> {
         self.active += 1;
     }
 
-    pub fn recv(&mut self) -> Result<Msg, Box<dyn Error>> {
+    pub fn recv(&mut self) -> Result<Message, Box<dyn Error>> {
         self.recv_pipe().map(|(msg, _)| msg)
     }
 
-    pub fn recv_pipe(&mut self) -> Result<(Msg, usize), Box<dyn Error>> {
-        let mut msg = Msg::new();
+    pub fn recv_pipe(&mut self) -> Result<(Message, usize), Box<dyn Error>> {
+        let mut msg = Message::new();
 
         while self.active > 0 {
             if self.pipes[self.current].read(&mut msg) {
@@ -125,7 +125,7 @@ mod tests {
     }
 
     impl Pipe for MockPipe {
-        fn read(&mut self, _msg: &mut Msg) -> bool {
+        fn read(&mut self, _msg: &mut Message) -> bool {
             self.has_message
         }
 

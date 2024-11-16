@@ -1,5 +1,7 @@
 use std::error::Error;
 
+use crate::context::Context;
+
 // Equivalent to C++ msg_t
 struct Msg {
     flags: u32,
@@ -32,7 +34,7 @@ struct Router {
 
 impl Router {
     fn new(parent: *mut Context, tid: u32, sid: i32) -> Self {
-        Router { }
+        Router {}
     }
 
     fn xsend(&mut self, msg: &mut Msg) -> Result<(), Box<dyn Error>> {

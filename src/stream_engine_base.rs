@@ -1,8 +1,9 @@
 use std::collections::HashMap;
-use std::io::{Read, Write};
-use std::net::TcpStream;
+#[cfg(unix)]
 use std::os::unix::io::RawFd;
 use std::time::Duration;
+
+use crate::types::ZmqRawFd;
 
 // Constants
 const HANDSHAKE_TIMER_ID: i32 = 0x40;
@@ -40,7 +41,7 @@ pub struct StreamEngineBase {
     has_timeout_timer: bool,
     has_heartbeat_timer: bool,
     peer_address: String,
-    socket: RawFd,
+    socket: ZmqRawFd,
     plugged: bool,
     handshaking: bool,
     io_error: bool,
@@ -51,7 +52,7 @@ pub struct StreamEngineBase {
 // Implementation of main functionality
 impl StreamEngineBase {
     pub fn new(
-        fd: RawFd,
+        fd: ZmqRawFd,
         options: Options,
         endpoint_uri_pair: EndpointUriPair,
         has_handshake_stage: bool,
@@ -158,8 +159,12 @@ impl StreamEngineBase {
 impl IoObject for StreamEngineBase {
     fn handle_io_event(&mut self, event_type: IoEventType) {
         match event_type {
-            IoEventType::In => { self.in_event(); },
-            IoEventType::Out => { self.out_event(); },
+            IoEventType::In => {
+                self.in_event();
+            }
+            IoEventType::Out => {
+                self.out_event();
+            }
         }
     }
 }
@@ -175,8 +180,8 @@ pub enum IoEventType {
 }
 
 pub trait IoThread {
-    fn add_fd(&mut self, fd: RawFd);
-    fn rm_fd(&mut self, fd: RawFd);
+    fn add_fd(&mut self, fd: ZmqRawFd);
+    fn rm_fd(&mut self, fd: ZmqRawFd);
 }
 
 pub trait SessionBase {
@@ -219,7 +224,7 @@ pub struct Metadata {
 }
 
 // Helper functions
-fn get_peer_address(fd: RawFd) -> String {
+fn get_peer_address(fd: ZmqRawFd) -> String {
     // Implementation to get peer address from socket
     String::new()
 }

@@ -4,17 +4,6 @@ use std::{
     path::PathBuf,
 };
 
-#[cfg(target_family = "windows")]
-use std::os::windows::io::{AsRawSocket, RawSocket};
-
-use crate::{
-    error::ZmqError,
-    socket::Socket,
-    stream_listener::StreamListener,
-    thread::IoThread,
-    util::{make_socket_noninheritable, set_nosigpipe},
-};
-
 #[cfg(feature = "ipc")]
 pub struct IpcListener {
     inner: StreamListener,
@@ -53,12 +42,8 @@ impl IpcListener {
         let socket = if self.options.use_fd != -1 {
             self.options.use_fd
         } else {
-            let sock = socket::socket(
-                socket::AF_UNIX,
-                socket::SOCK_STREAM,
-                0,
-            )?;
-            
+            let sock = socket::socket(socket::AF_UNIX, socket::SOCK_STREAM, 0)?;
+
             socket::bind(sock, addr.as_str())?;
             socket::listen(sock, self.options.backlog)?;
             sock
@@ -66,7 +51,7 @@ impl IpcListener {
 
         self.filename = Some(PathBuf::from(addr));
         self.has_file = true;
-        
+
         self.socket.event_listening(self.endpoint(), socket);
         Ok(())
     }
@@ -84,12 +69,14 @@ impl IpcListener {
                     Ok(fd)
                 }
                 Err(e) => match e.raw_os_error() {
-                    Some(libc::EAGAIN) | Some(libc::EWOULDBLOCK) | Some(libc::EINTR) 
-                    | Some(libc::ECONNABORTED) | Some(libc::EPROTO) | Some(libc::ENFILE) => {
-                        Err(ZmqError::EAGAIN)
-                    }
+                    Some(libc::EAGAIN)
+                    | Some(libc::EWOULDBLOCK)
+                    | Some(libc::EINTR)
+                    | Some(libc::ECONNABORTED)
+                    | Some(libc::EPROTO)
+                    | Some(libc::ENFILE) => Err(ZmqError::EAGAIN),
                     _ => Err(e.into()),
-                }
+                },
             }
         }
 
@@ -102,9 +89,10 @@ impl IpcListener {
 
     #[cfg(any(target_os = "linux", target_os = "openbsd"))]
     fn filter(&self, sock: RawFd) -> Result<bool, ZmqError> {
-        if self.options.ipc_uid_accept_filters.is_empty() 
+        if self.options.ipc_uid_accept_filters.is_empty()
             && self.options.ipc_pid_accept_filters.is_empty()
-            && self.options.ipc_gid_accept_filters.is_empty() {
+            && self.options.ipc_gid_accept_filters.is_empty()
+        {
             return Ok(true);
         }
 

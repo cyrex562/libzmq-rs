@@ -1,6 +1,6 @@
 use std::os::raw::c_int;
-use crate::ctx::Ctx;
-use crate::msg::Msg;
+use crate::context::Context;
+use crate::message::Message;
 use crate::pipe::Pipe;
 use crate::xpub::XPub;
 // Forward declarations
@@ -16,7 +16,7 @@ pub struct Pub {
 }
 
 impl Pub {
-    pub fn new(parent: &mut Ctx, tid: u32, sid: i32) -> Self {
+    pub fn new(parent: &mut Context, tid: u32, sid: i32) -> Self {
         Pub {
             inner: XPub::new(parent, tid, sid)
         }
@@ -33,7 +33,7 @@ impl Pub {
         self.inner.attach_pipe(pipe, subscribe_to_all, locally_initiated);
     }
 
-    pub fn recv(&mut self, _msg: &mut Msg) -> c_int {
+    pub fn recv(&mut self, _msg: &mut Message) -> c_int {
         // Messages cannot be received from PUB socket
         // FIXME: raise ENOTSUP
         // errno::set_errno(errno::Errno(libc::ENOTSUP));

@@ -1,13 +1,22 @@
-use std::{
-    io::{self, Error, ErrorKind},
-    os::unix::io::{AsRawFd, RawFd},
-};
-use libc::{self, AF_UNIX, EINPROGRESS, SOCK_STREAM, SOL_SOCKET, SO_ERROR};
-use winapi::um::winsock2::{SOCK_STREAM, SOL_SOCKET, SO_ERROR};
+use std::io::{self, Error, ErrorKind};
+
+use winapi::{shared::cfg, um::winsock2::{ioctlsocket, FIONBIO, SOCKET}};
+#[cfg(windows)]
 use windows_sys::Win32::Networking::WinSock::AF_UNIX;
 
+#[cfg(windows)]
+use winapi::um::winsock2::{SOCK_STREAM, SOL_SOCKET, SO_ERROR};
+
+#[cfg(unix)]
+use libc::{self, AF_UNIX, EINPROGRESS, SOCK_STREAM, SOL_SOCKET, SO_ERROR};
+
+use crate::{
+    constants::ZMQ_EINPROGRESS,
+    types::{ZmqRawFd, ZmqSocklen},
+};
+
 // Constants
-const RETIRED_FD: RawFd = -1;
+const RETIRED_FD: ZmqRawFd = u64::MAX;
 
 // Main structure
 pub struct IpcConnecter {
@@ -16,7 +25,7 @@ pub struct IpcConnecter {
     options: Options,
     addr: *mut Address,
     delayed_start: bool,
-    s: RawFd,
+    s: ZmqRawFd,
     handle: *mut Handle,
 }
 
@@ -58,7 +67,7 @@ impl IpcConnecter {
                 self.handle = self.add_fd(self.s);
                 self.out_event();
             }
-            Ok(-1) if io::Error::last_os_error().raw_os_error() == Some(EINPROGRESS) => {
+            Ok(-1) if io::Error::last_os_error().raw_os_error() == Some(ZMQ_EINPROGRESS) => {
                 self.handle = self.add_fd(self.s);
                 self.set_pollout(self.handle);
                 self.socket_event_connect_delayed();
@@ -107,9 +116,9 @@ impl IpcConnecter {
         Err(err)
     }
 
-    fn connect(&mut self) -> RawFd {
+    fn connect(&mut self) -> ZmqRawFd {
         let mut err: i32 = 0;
-        let mut len = std::mem::size_of::<i32>() as libc::socklen_t;
+        let mut len = std::mem::size_of::<i32>() as ZmqSocklen;
 
         let rc = unsafe {
             libc::getsockopt(
@@ -144,6 +153,7 @@ impl IpcConnecter {
 
     // Helper methods
     fn set_nonblocking(&self) -> io::Result<()> {
+        #[cfg(unix)]
         unsafe {
             let flags = libc::fcntl(self.s, libc::F_GETFL);
             if flags == -1 {
@@ -153,6 +163,14 @@ impl IpcConnecter {
                 return Err(io::Error::last_os_error());
             }
         }
+        #[cfg(windows)]
+        unsafe {
+            let mut nonblocking = 1u32;
+            if ioctlsocket(self.s as SOCKET, FIONBIO, &mut nonblocking) != 0 {
+                return Err(io::Error::last_os_error());
+            }
+        }
+
         Ok(())
     }
 
@@ -165,11 +183,15 @@ impl IpcConnecter {
     fn rm_handle(&self) {}
     fn close(&self) {}
     fn add_reconnect_timer(&self) {}
-    fn create_engine(&self, _fd: RawFd, _name: String) {}
-    fn add_fd(&self, _fd: RawFd) -> *mut Handle { std::ptr::null_mut() }
+    fn create_engine(&self, _fd: ZmqRawFd, _name: String) {}
+    fn add_fd(&self, _fd: ZmqRawFd) -> *mut Handle {
+        std::ptr::null_mut()
+    }
     fn set_pollout(&self, _handle: *mut Handle) {}
     fn socket_event_connect_delayed(&self) {}
-    fn get_socket_name(&self, _fd: RawFd) -> String { String::new() }
+    fn get_socket_name(&self, _fd: ZmqRawFd) -> String {
+        String::new()
+    }
 }
 
 // Placeholder types that would need actual implementations

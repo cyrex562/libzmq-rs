@@ -1,6 +1,4 @@
-
 use std::collections::HashSet;
-use std::ffi::c_void;
 
 // Forward declarations
 pub trait IOThread {}
@@ -232,45 +230,94 @@ impl SessionBase for HelloMsgSession {
     fn pull_msg(&mut self, msg: &mut Msg) -> i32 {
         if self.new_pipe {
             self.new_pipe = false;
-            msg.init_buffer(&self.base.options.hello_msg, self.base.options.hello_msg.len())
+            msg.init_buffer(
+                &self.base.options.hello_msg,
+                self.base.options.hello_msg.len(),
+            )
         } else {
             self.base.pull_msg(msg)
         }
     }
 
     // Implement other required methods...
-    fn attach_pipe(&mut self, _pipe: &dyn Pipe) { unimplemented!() }
-    fn reset(&mut self) { unimplemented!() }
-    fn flush(&mut self) { unimplemented!() }
-    fn rollback(&mut self) { unimplemented!() }
-    fn engine_error(&mut self, _handshaked: bool, _reason: ErrorReason) { unimplemented!() }
-    fn engine_ready(&mut self) { unimplemented!() }
-    fn push_msg(&mut self, _msg: &mut Msg) -> i32 { unimplemented!() }
-    fn read_zap_msg(&mut self, _msg: &mut Msg) -> i32 { unimplemented!() }
-    fn write_zap_msg(&mut self, _msg: &mut Msg) -> i32 { unimplemented!() }
-    fn get_socket(&self) -> Option<&dyn SocketBase> { unimplemented!() }
-    fn get_endpoint(&self) -> EndpointUriPair { unimplemented!() }
-    fn process_plug(&mut self) { unimplemented!() }
-    fn process_attach(&mut self, _engine: Box<dyn Engine>) { unimplemented!() }
-    fn process_term(&mut self, _linger: i32) { unimplemented!() }
-    fn zap_connect(&mut self) -> i32 { unimplemented!() }
-    fn zap_enabled(&self) -> bool { unimplemented!() }
+    fn attach_pipe(&mut self, _pipe: &dyn Pipe) {
+        unimplemented!()
+    }
+    fn reset(&mut self) {
+        unimplemented!()
+    }
+    fn flush(&mut self) {
+        unimplemented!()
+    }
+    fn rollback(&mut self) {
+        unimplemented!()
+    }
+    fn engine_error(&mut self, _handshaked: bool, _reason: ErrorReason) {
+        unimplemented!()
+    }
+    fn engine_ready(&mut self) {
+        unimplemented!()
+    }
+    fn push_msg(&mut self, _msg: &mut Msg) -> i32 {
+        unimplemented!()
+    }
+    fn read_zap_msg(&mut self, _msg: &mut Msg) -> i32 {
+        unimplemented!()
+    }
+    fn write_zap_msg(&mut self, _msg: &mut Msg) -> i32 {
+        unimplemented!()
+    }
+    fn get_socket(&self) -> Option<&dyn SocketBase> {
+        unimplemented!()
+    }
+    fn get_endpoint(&self) -> EndpointUriPair {
+        unimplemented!()
+    }
+    fn process_plug(&mut self) {
+        unimplemented!()
+    }
+    fn process_attach(&mut self, _engine: Box<dyn Engine>) {
+        unimplemented!()
+    }
+    fn process_term(&mut self, _linger: i32) {
+        unimplemented!()
+    }
+    fn zap_connect(&mut self) -> i32 {
+        unimplemented!()
+    }
+    fn zap_enabled(&self) -> bool {
+        unimplemented!()
+    }
 }
 
 impl Own for HelloMsgSession {
-    fn process_term(&mut self, _linger: i32) { unimplemented!() }
+    fn process_term(&mut self, _linger: i32) {
+        unimplemented!()
+    }
 }
 
 impl IOObject for HelloMsgSession {
-    fn add_timer(&mut self, _timeout: i32, _id: i32) { unimplemented!() }
-    fn cancel_timer(&mut self, _id: i32) { unimplemented!() }
+    fn add_timer(&mut self, _timeout: i32, _id: i32) {
+        unimplemented!()
+    }
+    fn cancel_timer(&mut self, _id: i32) {
+        unimplemented!()
+    }
 }
 
 impl PipeEvents for HelloMsgSession {
-    fn read_activated(&mut self, _pipe: &dyn Pipe) { unimplemented!() }
-    fn write_activated(&mut self, _pipe: &dyn Pipe) { unimplemented!() }
-    fn hiccuped(&mut self, _pipe: &dyn Pipe) { unimplemented!() }
-    fn pipe_terminated(&mut self, _pipe: &dyn Pipe) { unimplemented!() }
+    fn read_activated(&mut self, _pipe: &dyn Pipe) {
+        unimplemented!()
+    }
+    fn write_activated(&mut self, _pipe: &dyn Pipe) {
+        unimplemented!()
+    }
+    fn hiccuped(&mut self, _pipe: &dyn Pipe) {
+        unimplemented!()
+    }
+    fn pipe_terminated(&mut self, _pipe: &dyn Pipe) {
+        unimplemented!()
+    }
 }
 
 // Constants

@@ -1,9 +1,6 @@
 use std::os::unix::io::RawFd;
 use std::vec::Vec;
 
-#[cfg(target_os = "windows")]
-compile_error!("poll is broken on Windows for the purpose of the I/O thread poller, use select instead");
-
 // Constants
 const RETIRED_FD: RawFd = -1;
 
@@ -55,7 +52,7 @@ impl Poll {
             revents: 0,
         };
         self.pollset.push(pfd);
-        
+
         let index = (self.pollset.len() - 1) as RawFd;
         self.fd_table[fd as usize] = FdEntry { index, events };
 
@@ -154,7 +151,7 @@ impl Poll {
             }
 
             let events = &self.fd_table[pollfd.fd as usize].events;
-            
+
             if (pollfd.revents & (libc::POLLERR | libc::POLLHUP)) != 0 {
                 events.in_event();
             }

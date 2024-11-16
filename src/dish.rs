@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::error::Error;
-use crate::msg::Msg;
+use crate::message::Message;
 
 const ZMQ_GROUP_MAX_LENGTH: usize = 255; // Assumed max length
 
@@ -47,7 +47,7 @@ const ZMQ_GROUP_MAX_LENGTH: usize = 255; // Assumed max length
 struct Dish {
     subscriptions: HashSet<String>,
     has_message: bool,
-    message: Msg,
+    message: Message,
     fq: FairQueue,
     dist: Distributor,
 }
@@ -57,7 +57,7 @@ impl Dish {
         Self {
             subscriptions: HashSet::new(),
             has_message: false,
-            message: Msg::new(),
+            message: Message::new(),
             fq: FairQueue::new(),
             dist: Distributor::new(),
         }
@@ -72,7 +72,7 @@ impl Dish {
             return Err("Already subscribed to group".into());
         }
 
-        let mut msg = Msg::new();
+        let mut msg = Message::new();
         msg.init_join()?;
         msg.set_group(group)?;
 
@@ -89,7 +89,7 @@ impl Dish {
             return Err("Not subscribed to group".into());
         }
 
-        let mut msg = Msg::new();
+        let mut msg = Message::new();
         msg.init_leave()?;
         msg.set_group(group)?;
 
@@ -97,9 +97,9 @@ impl Dish {
         Ok(())
     }
 
-    fn recv(&mut self, msg: &mut Msg) -> Result<(), Box<dyn Error>> {
+    fn recv(&mut self, msg: &mut Message) -> Result<(), Box<dyn Error>> {
         if self.has_message {
-            *msg = std::mem::replace(&mut self.message, Msg::new());
+            *msg = std::mem::replace(&mut self.message, Message::new());
             self.has_message = false;
             return Ok(());
         }
@@ -107,7 +107,7 @@ impl Dish {
         self.recv_internal(msg)
     }
 
-    fn recv_internal(&mut self, msg: &mut Msg) -> Result<(), Box<dyn Error>> {
+    fn recv_internal(&mut self, msg: &mut Message) -> Result<(), Box<dyn Error>> {
         loop {
             self.fq.recv(msg)?;
             
@@ -128,7 +128,7 @@ impl FairQueue {
         Self
     }
 
-    fn recv(&mut self, msg: &mut Msg) -> Result<(), Box<dyn Error>> {
+    fn recv(&mut self, msg: &mut Message) -> Result<(), Box<dyn Error>> {
         Ok(()) // Placeholder
     }
 }
@@ -138,7 +138,7 @@ impl Distributor {
         Self
     }
 
-    fn send_to_all(&mut self, msg: &Msg) -> Result<(), Box<dyn Error>> {
+    fn send_to_all(&mut self, msg: &Message) -> Result<(), Box<dyn Error>> {
         Ok(()) // Placeholder
     }
 }

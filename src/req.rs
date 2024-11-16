@@ -1,6 +1,9 @@
 use std::mem;
 use std::os::raw::c_void;
 
+use crate::constants::ZMQ_EFSM;
+use crate::context::Context;
+
 // Constants from ZMQ
 const ZMQ_REQ: i32 = 3;
 const ZMQ_REQ_CORRELATE: i32 = 1;
@@ -57,7 +60,7 @@ impl ReqT {
     pub fn xsend(&mut self, msg: &mut Msg) -> Result<(), i32> {
         if self.receiving_reply {
             if self.strict {
-                return Err(libc::EFSM);
+                return Err(ZMQ_EFSM);
             }
             self.receiving_reply = false;
             self.message_begins = true;
@@ -82,7 +85,7 @@ impl ReqT {
         }
 
         let more = msg.has_more();
-        
+
         // Send the actual message
         // ... implementation details ...
 
@@ -96,7 +99,7 @@ impl ReqT {
 
     pub fn xrecv(&mut self, msg: &mut Msg) -> Result<(), i32> {
         if !self.receiving_reply {
-            return Err(libc::EFSM);
+            return Err(ZMQ_EFSM);
         }
 
         while self.message_begins {
@@ -138,10 +141,15 @@ impl ReqT {
         true
     }
 
-    pub fn xsetsockopt(&mut self, option: i32, optval: *const c_void, optvallen: usize) -> Result<(), i32> {
+    pub fn xsetsockopt(
+        &mut self,
+        option: i32,
+        optval: *const c_void,
+        optvallen: usize,
+    ) -> Result<(), i32> {
         let is_int = optvallen == std::mem::size_of::<i32>();
         let mut value = 0;
-        
+
         if is_int {
             unsafe {
                 value = *(optval as *const i32);
@@ -225,7 +233,7 @@ impl ReqSession {
                 }
             }
         }
-        
+
         Err(libc::EFAULT)
     }
 

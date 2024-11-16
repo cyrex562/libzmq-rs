@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, Condvar};
+use std::sync::{Condvar, Mutex};
 use std::time::Duration;
 use std::vec::Vec;
 
@@ -54,7 +54,7 @@ impl MailboxSafe {
     pub fn new() -> Self {
         let cpipe = YPipe::new();
         assert!(!cpipe.check_read());
-        
+
         MailboxSafe {
             cpipe: Mutex::new(cpipe),
             cond_var: Condvar::new(),
@@ -78,7 +78,7 @@ impl MailboxSafe {
 
     pub fn recv(&self, timeout: Option<Duration>) -> Result<Command, std::io::Error> {
         let mut pipe = self.cpipe.lock().unwrap();
-        
+
         if let Some(cmd) = pipe.read() {
             return Ok(cmd);
         }
@@ -88,7 +88,10 @@ impl MailboxSafe {
                 let result = self.cond_var.wait_timeout(pipe, timeout_duration).unwrap();
                 pipe = result.0;
                 if result.1.timed_out() {
-                    return Err(std::io::Error::new(std::io::ErrorKind::WouldBlock, "timeout"));
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::WouldBlock,
+                        "timeout",
+                    ));
                 }
             }
             None => {
@@ -96,8 +99,9 @@ impl MailboxSafe {
             }
         }
 
-        pipe.read()
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::WouldBlock, "no command available"))
+        pipe.read().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::WouldBlock, "no command available")
+        })
     }
 
     pub fn add_signaler(&self, signaler: Box<dyn Signaler>) {

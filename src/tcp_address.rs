@@ -1,19 +1,18 @@
-use std::ffi::CStr;
 use std::mem;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
 #[cfg(unix)]
 use libc::{sa_family_t, sockaddr, sockaddr_in, sockaddr_in6, AF_INET, AF_INET6};
 #[cfg(windows)]
 use winapi::shared::ws2def::{AF_INET, AF_INET6, SOCKADDR as sockaddr, SOCKADDR_IN as sockaddr_in};
-#[cfg(windows)]
-use winapi::shared::ws2ipdef::SOCKADDR_IN6 as sockaddr_in6;
+
+use crate::constants::ZmqSockAddrIn6;
 
 #[derive(Clone)]
 pub enum IpAddrEnum {
     V4(sockaddr_in),
-    V6(sockaddr_in6),
+    V6(ZmqSockAddrIn6),
 }
 
 pub struct TcpAddress {
@@ -38,19 +37,19 @@ impl TcpAddress {
 
     pub fn from_sockaddr(sa: &sockaddr, sa_len: usize) -> Self {
         let mut addr = TcpAddress::new();
-        
+
         unsafe {
             match (*sa).sa_family as i32 {
                 AF_INET if sa_len >= mem::size_of::<sockaddr_in>() => {
                     addr.address = IpAddrEnum::V4(*(sa as *const _ as *const sockaddr_in));
                 }
-                AF_INET6 if sa_len >= mem::size_of::<sockaddr_in6>() => {
-                    addr.address = IpAddrEnum::V6(*(sa as *const _ as *const sockaddr_in6));
+                AF_INET6 if sa_len >= mem::size_of::<ZmqSockAddrIn6>() => {
+                    addr.address = IpAddrEnum::V6(*(sa as *const _ as *const ZmqSockAddrIn6));
                 }
                 _ => {}
             }
         }
-        
+
         addr
     }
 
@@ -113,7 +112,7 @@ impl TcpAddress {
                 IpAddrEnum::V4(sa)
             }
             IpAddr::V6(ip) => {
-                let mut sa: sockaddr_in6 = unsafe { mem::zeroed() };
+                let mut sa: ZmqSockAddrIn6 = unsafe { mem::zeroed() };
                 sa.sin6_family = AF_INET6 as _;
                 sa.sin6_port = port.to_be();
                 sa.sin6_addr = unsafe { mem::transmute(ip.octets()) };
@@ -137,7 +136,7 @@ impl TcpAddress {
         };
 
         let port = u16::from_be(port);
-        
+
         Ok(match addr {
             IpAddr::V4(ip) => format!("tcp://{}:{}", ip, port),
             IpAddr::V6(ip) => format!("tcp://[{}]:{}", ip, port),
@@ -168,7 +167,13 @@ impl TcpAddressMask {
 
         // Parse the mask
         self.address_mask = match mask_str {
-            None => if ipv6 { 128 } else { 32 },
+            None => {
+                if ipv6 {
+                    128
+                } else {
+                    32
+                }
+            }
             Some("0") => 0,
             Some(mask) => {
                 let mask: i32 = mask.parse().map_err(|_| -1)?;

@@ -1,11 +1,16 @@
 use std::net::TcpStream;
+#[cfg(unix)]
 use std::os::unix::io::{AsRawFd, RawFd};
 
+use winapi::um::winsock2::closesocket;
+
+use crate::{address::Address, io_thread::IoThread, options::Options, random::generate_random, raw_engine::RawEngine, session_base::SessionBase, socket_base::SocketBase, types::ZmqRawFd, zmtp_engine::ZmtpEngine};
+
 // Constants
-const RETIRED_FD: RawFd = -1;
+const RETIRED_FD: ZmqRawFd = u64::MAX;
 
 // Type aliases
-type Handle = Option<RawFd>;
+type Handle = Option<ZmqRawFd>;
 
 // Timer ID enum
 #[derive(Eq, PartialEq)]
@@ -28,14 +33,14 @@ trait Own {
 // Main struct
 pub struct StreamConnecterBase {
     addr: Box<Address>,
-    s: RawFd,
+    s: ZmqRawFd,
     handle: Handle,
     endpoint: String,
     socket: Box<SocketBase>,
     delayed_start: bool,
     reconnect_timer_started: bool,
     current_reconnect_ivl: i32,
-    session: Box<SessionBase>,
+    session: Box<dyn SessionBase>,
     options: Options,
 }
 
@@ -114,19 +119,19 @@ impl StreamConnecterBase {
             // Platform-specific socket closing
             #[cfg(windows)]
             {
-                closesocket(self.s).expect("Failed to close socket");
+                unsafe { closesocket(self.s).expect("Failed to close socket") };
             }
             #[cfg(not(windows))]
             {
                 unsafe { libc::close(self.s) };
             }
-            
+
             self.socket.event_closed(&self.endpoint, self.s);
             self.s = RETIRED_FD;
         }
     }
 
-    fn create_engine(&mut self, fd: RawFd, local_address: &str) {
+    fn create_engine(&mut self, fd: ZmqRawFd, local_address: &str) {
         let endpoint_pair = EndpointPair::new(local_address, &self.endpoint);
 
         let engine = if self.options.raw_socket {

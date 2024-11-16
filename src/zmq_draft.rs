@@ -1,5 +1,7 @@
 #![allow(non_camel_case_types)]
 
+use crate::{constants::ZMQ_EVENT_ALL, zmq_msg_t};
+
 // Socket types
 pub const ZMQ_SERVER: i32 = 12;
 pub const ZMQ_CLIENT: i32 = 13;
@@ -74,6 +76,9 @@ pub const ZMQ_NOTIFY_DISCONNECT: i32 = 2;
 pub const ZMQ_EVENT_PIPES_STATS: u64 = 0x10000;
 pub const ZMQ_CURRENT_EVENT_VERSION: i32 = 1;
 pub const ZMQ_CURRENT_EVENT_VERSION_DRAFT: i32 = 2;
+
+pub const ZMQ_EVENT_ALL_V1: u64 = ZMQ_EVENT_ALL;
+
 pub const ZMQ_EVENT_ALL_V2: u64 = ZMQ_EVENT_ALL_V1 | ZMQ_EVENT_PIPES_STATS;
 
 #[cfg(windows)]

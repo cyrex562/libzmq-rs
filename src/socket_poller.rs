@@ -1,18 +1,22 @@
 use std::os::raw::{c_short, c_void};
 use std::time::Duration;
-use std::collections::Vec;
 
 #[cfg(unix)]
-use libc::{pollfd, poll, fd_set, select, timeval};
+use libc::{fd_set, poll, pollfd, select, timeval};
 #[cfg(windows)]
 use winapi::um::winsock2::{fd_set, select, SOCKET_ERROR, WSAPOLLFD as pollfd};
+
+use crate::err::ZmqError;
+use crate::signaler::Signaler;
+use crate::socket_base::SocketBase;
+use crate::types::ZmqRawFd;
 
 const CAFEBABE: u32 = 0xCAFEBABE;
 const DEADBEEF: u32 = 0xdeadbeef;
 
 pub struct Item {
     socket: Option<*mut SocketBase>,
-    fd: RawFd,
+    fd: ZmqRawFd,
     user_data: *mut c_void,
     events: c_short,
     #[cfg(feature = "poll")]
@@ -21,7 +25,7 @@ pub struct Item {
 
 pub struct Event {
     socket: Option<*mut SocketBase>,
-    fd: RawFd,
+    fd: ZmqRawFd,
     user_data: *mut c_void,
     events: c_short,
 }
@@ -69,7 +73,7 @@ impl SocketPoller {
 
     pub fn add(&mut self, socket: *mut SocketBase, user_data: *mut c_void, events: c_short) -> i32 {
         if self.items.iter().any(|item| item.socket == Some(socket)) {
-            return Err(Error::new(ErrorKind::InvalidInput));
+            return Err(ZmqError::InvalidInput);
         }
 
         if is_thread_safe(socket) {
@@ -95,7 +99,7 @@ impl SocketPoller {
 
     pub fn wait(&mut self, events: &mut [Event], timeout: Duration) -> Result<i32> {
         if self.items.is_empty() && timeout.is_none() {
-            return Err(Error::new(ErrorKind::InvalidInput));
+            return Err(ZmqError::InvalidInput);
         }
 
         if self.need_rebuild {

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-use std::os::raw::{c_int, c_long};
-use std::time::Duration;
-use std::{io, mem};
+use std::mem;
+use std::os::raw::c_int;
 
 #[cfg(windows)]
 use winapi::shared::ws2def::*;
@@ -10,6 +9,8 @@ use winapi::um::winsock2::*;
 
 #[cfg(not(windows))]
 use libc::{fd_set, timeval, FD_CLR, FD_ISSET, FD_SET, FD_ZERO};
+
+use crate::constants::{ZMQ_AF_UNSPEC, ZMQ_FD_CLR, ZMQ_FD_SET, ZMQ_FD_ZERO};
 
 const FD_SETSIZE: usize = 1024;
 const RETIRED_FD: i32 = -1;
@@ -27,22 +28,18 @@ impl FdsSet {
             let mut read: fd_set = mem::zeroed();
             let mut write: fd_set = mem::zeroed();
             let mut error: fd_set = mem::zeroed();
-            FD_ZERO(&mut read);
-            FD_ZERO(&mut write);
-            FD_ZERO(&mut error);
-            FdsSet {
-                read,
-                write,
-                error,
-            }
+            ZMQ_FD_ZERO(&mut read);
+            ZMQ_FD_ZERO(&mut write);
+            ZMQ_FD_ZERO(&mut error);
+            FdsSet { read, write, error }
         }
     }
 
     fn remove_fd(&mut self, fd: i32) {
         unsafe {
-            FD_CLR(fd as usize, &mut self.read);
-            FD_CLR(fd as usize, &mut self.write);
-            FD_CLR(fd as usize, &mut self.error);
+            ZMQ_FD_CLR(fd as usize, &mut self.read);
+            ZMQ_FD_CLR(fd as usize, &mut self.write);
+            ZMQ_FD_CLR(fd as usize, &mut self.error);
         }
     }
 }
@@ -110,11 +107,14 @@ impl Select {
         #[cfg(windows)]
         {
             let family = self.get_fd_family(fd);
-            assert!(family != AF_UNSPEC as u16);
-            let family_entry = self.family_entries.entry(family).or_insert_with(FamilyEntry::new);
+            assert!(family != ZMQ_AF_UNSPEC as u16);
+            let family_entry = self
+                .family_entries
+                .entry(family)
+                .or_insert_with(FamilyEntry::new);
             family_entry.fd_entries.push(fd_entry);
             unsafe {
-                FD_SET(fd as usize, &mut family_entry.fds_set.error);
+                ZMQ_FD_SET(fd as usize, &mut family_entry.fds_set.error);
             }
         }
         #[cfg(not(windows))]
@@ -144,12 +144,18 @@ impl Select {
         }
         #[cfg(not(windows))]
         {
-            if let Some(pos) = self.family_entry.fd_entries.iter().position(|e| e.fd == handle) {
+            if let Some(pos) = self
+                .family_entry
+                .fd_entries
+                .iter()
+                .position(|e| e.fd == handle)
+            {
                 self.family_entry.fd_entries.remove(pos);
                 self.family_entry.fds_set.remove_fd(handle);
-                
+
                 if handle == self.max_fd {
-                    self.max_fd = self.family_entry
+                    self.max_fd = self
+                        .family_entry
                         .fd_entries
                         .iter()
                         .map(|e| e.fd)
@@ -166,7 +172,7 @@ impl Select {
             let family = self.get_fd_family(handle);
             if let Some(family_entry) = self.family_entries.get_mut(&family) {
                 unsafe {
-                    FD_SET(handle as usize, &mut family_entry.fds_set.read);
+                    ZMQ_FD_SET(handle as usize, &mut family_entry.fds_set.read);
                 }
             }
         }
@@ -182,7 +188,7 @@ impl Select {
             let family = self.get_fd_family(handle);
             if let Some(family_entry) = self.family_entries.get_mut(&family) {
                 unsafe {
-                    FD_CLR(handle as usize, &mut family_entry.fds_set.read);
+                    ZMQ_FD_CLR(handle as usize, &mut family_entry.fds_set.read);
                 }
             }
         }
@@ -195,19 +201,26 @@ impl Select {
     #[cfg(windows)]
     fn get_fd_family(&mut self, fd: i32) -> u16 {
         // Check cache first
-        if let Some(pos) = self.fd_family_cache.iter().position(|&(cached_fd, _)| cached_fd == fd) {
+        if let Some(pos) = self
+            .fd_family_cache
+            .iter()
+            .position(|&(cached_fd, _)| cached_fd == fd)
+        {
             return self.fd_family_cache[pos].1;
         }
 
         let family = self.determine_fd_family(fd);
         // Update cache
-        let idx = rand::random::<usize>() % 8;
+        let mut rng = rand::thread_rng();
+        let idx = rng.gen_range(0, 8);
         self.fd_family_cache[idx] = (fd, family);
         family
     }
 
     #[cfg(windows)]
     fn determine_fd_family(&self, fd: i32) -> u16 {
+        use crate::constants::{ZMQ_SOCK_DGRAM, ZMQ_SOL_SOCKET, ZMQ_SO_TYPE};
+
         unsafe {
             let mut addr: SOCKADDR_STORAGE = mem::zeroed();
             let mut addr_len = mem::size_of::<SOCKADDR_STORAGE>() as c_int;
@@ -216,13 +229,13 @@ impl Select {
 
             if getsockopt(
                 fd as SOCKET,
-                SOL_SOCKET,
-                SO_TYPE,
+                ZMQ_SOL_SOCKET,
+                ZMQ_SO_TYPE,
                 &mut sock_type as *mut _ as *mut i8,
                 &mut type_len,
             ) == 0
             {
-                if sock_type == SOCK_DGRAM as c_int {
+                if sock_type == ZMQ_SOCK_DGRAM as c_int {
                     return AF_INET as u16;
                 }
 
@@ -266,10 +279,10 @@ mod tests {
         let mut select = Select::new();
         let events = Box::new(MockPollEvents);
         let fd = 42;
-        
+
         let handle = select.add_fd(fd, events);
         assert_eq!(handle, fd);
-        
+
         select.rm_fd(handle);
     }
 }

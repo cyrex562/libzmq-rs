@@ -1,5 +1,7 @@
 use std::string::String;
 
+use crate::{constants::{ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_HELLO, ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND, ZMQ_PROTOCOL_ERROR_ZMTP_UNSPECIFIED}, err::ZmqError, message::Message, options::Options, session_base::SessionBase};
+
 // State enum to replace the implicit state machine
 #[derive(PartialEq)]
 enum State {
@@ -22,7 +24,7 @@ const ERROR_PREFIX: &[u8] = b"ERROR";
 
 pub struct PlainServer {
     state: State,
-    session: SessionBase,
+    session: Box<dyn SessionBase>,
     peer_address: String,
     options: Options,
     status_code: String,

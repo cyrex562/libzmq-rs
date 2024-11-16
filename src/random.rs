@@ -1,8 +1,8 @@
+use rand::{thread_rng, Rng};
+use std::sync::atomic::AtomicBool;
 use lazy_static::lazy_static;
-use rand::{Rng, thread_rng};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
+
+use crate::mutex::Mutex;
 
 lazy_static! {
     static ref RANDOM_INIT: Mutex<bool> = Mutex::new(false);
