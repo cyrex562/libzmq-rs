@@ -1,14 +1,14 @@
-use crate::constants::ZMQ_PROBE_ROUTER;
+use crate::constants::{ZMQ_DEALER, ZMQ_PROBE_ROUTER};
 use crate::fair_queue::FairQueue;
-use crate::lb::Lb;
+use crate::load_balancer::LoadBalancer;
 use crate::message::Message;
 use crate::socket_base::{SocketBase, SocketOptions};
-use crate::{context::Context, pipe::Pipe, ZMQ_DEALER};
+use crate::{context::Context, pipe::Pipe};
 
 pub struct Dealer<T: Pipe> {
     socket_base: SocketBase,
     fq: FairQueue<T>,
-    lb: Lb,
+    lb: LoadBalancer,
     probe_router: bool,
 }
 
@@ -22,7 +22,7 @@ impl<T> Dealer<T> {
         Dealer {
             socket_base: SocketBase::new(parent, tid, sid, options),
             fq: FairQueue::new(),
-            lb: Lb::new(),
+            lb: LoadBalancer::new(),
             probe_router: false,
         }
     }

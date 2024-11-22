@@ -1,6 +1,6 @@
-use std::os::unix::io::{AsRawFd, RawFd};
-use std::io::{Error, Result};
 use std::fs::OpenOptions;
+use std::io::{Error, Result};
+use std::os::unix::io::{AsRawFd, RawFd};
 use std::time::Duration;
 
 // Constants
@@ -124,11 +124,14 @@ impl DevPoll {
     }
 
     pub fn poll(&mut self, timeout: Option<Duration>) -> Result<()> {
-        let mut ev_buf = vec![libc::pollfd {
-            fd: -1,
-            events: 0,
-            revents: 0,
-        }; MAX_IO_EVENTS];
+        let mut ev_buf = vec![
+            libc::pollfd {
+                fd: -1,
+                events: 0,
+                revents: 0,
+            };
+            MAX_IO_EVENTS
+        ];
 
         // Accept all pending FDs
         for &fd in &self.pending_list {

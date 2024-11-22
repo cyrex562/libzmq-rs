@@ -1,10 +1,10 @@
-use std::collections::{HashMap, HashSet};
-use std::sync::atomic::{AtomicI32, Ordering};
+use std::collections::HashMap;
+use std::sync::atomic::AtomicI32;
 
 // Constants
 const CURVE_KEYSIZE: usize = 32;
 const CURVE_KEYSIZE_Z85: usize = 40;
-const BINDDEVSIZ: usize = 16;
+const BIND_DEV_SZ: usize = 16;
 
 // Types
 type Uid = u32;
@@ -18,8 +18,8 @@ pub struct TcpAddressMask {
 
 pub struct Options {
     // High-water marks for message pipes
-    sndhwm: i32,
-    rcvhwm: i32,
+    send_high_water_mark: i32,
+    recv_high_water_mark: i32,
 
     // I/O thread affinity
     affinity: u64,
@@ -38,14 +38,14 @@ pub struct Options {
     multicast_hops: i32,
 
     // Sets the maximum transport data unit size in every multicast packet sent
-    multicast_maxtpdu: i32,
+    multicast_max_trans_data_unit_szu: i32,
 
     // SO_SNDBUF and SO_RCVBUF to be passed to underlying transport sockets
-    sndbuf: i32,
-    rcvbuf: i32,
+    send_buf_opt: i32,
+    recv_buf_opt: i32,
 
     // Type of service (containing DSCP and ECN socket options)
-    tos: i32,
+    type_of_svc: i32,
 
     // Protocol-defined priority
     priority: i32,
@@ -60,26 +60,26 @@ pub struct Options {
     connect_timeout: i32,
 
     // Maximum interval in milliseconds beyond which TCP will timeout retransmitted packets
-    tcp_maxrt: i32,
+    tcp_max_retrans_intvl: i32,
 
     // Disable reconnect under certain conditions
     reconnect_stop: i32,
 
     // Minimum interval between attempts to reconnect, in milliseconds
-    pub reconnect_ivl: i32,
+    pub reconnect_intvl: i32,
 
     // Maximum interval between attempts to reconnect, in milliseconds
-    pub reconnect_ivl_max: i32,
+    pub reconnect_intvl_max: i32,
 
     // Maximum backlog for pending connections
     backlog: i32,
 
     // Maximal size of message to handle
-    maxmsgsize: i64,
+    max_msg_sz: i64,
 
     // The timeout for send/recv operations for this socket, in milliseconds
-    rcvtimeo: i32,
-    sndtimeo: i32,
+    recv_timeo: i32,
+    send_timeo: i32,
 
     // If true, IPv6 is enabled (as well as IPv4)
     ipv6: bool,
@@ -155,14 +155,14 @@ pub struct Options {
     conflate: bool,
 
     // Connection handshake timeout
-    handshake_ivl: i32,
+    handshake_intvl: i32,
 
     connected: bool,
 
     // Heartbeat configuration
     heartbeat_ttl: u16,
-    heartbeat_interval: i32,
-    heartbeat_timeout: i32,
+    heartbeat_intvl: i32,
+    heartbeat_timeo: i32,
 
     // VMCI configuration
     #[cfg(feature = "vmci")]
@@ -244,30 +244,30 @@ pub struct Options {
 impl Options {
     pub fn new() -> Self {
         Options {
-            sndhwm: 1000,
-            rcvhwm: 1000,
+            send_high_water_mark: 1000,
+            recv_high_water_mark: 1000,
             affinity: 0,
             routing_id_size: 0,
             routing_id: [0; 256],
             rate: 100,
             recovery_ivl: 10000,
             multicast_hops: 1,
-            multicast_maxtpdu: 1500,
-            sndbuf: -1,
-            rcvbuf: -1,
-            tos: 0,
+            multicast_max_trans_data_unit_szu: 1500,
+            send_buf_opt: -1,
+            recv_buf_opt: -1,
+            type_of_svc: 0,
             priority: 0,
             socket_type: -1,
             linger: AtomicI32::new(-1),
             connect_timeout: 0,
-            tcp_maxrt: 0,
+            tcp_max_retrans_intvl: 0,
             reconnect_stop: 0,
-            reconnect_ivl: 100,
-            reconnect_ivl_max: 0,
+            reconnect_intvl: 100,
+            reconnect_intvl_max: 0,
             backlog: 100,
-            maxmsgsize: -1,
-            rcvtimeo: -1,
-            sndtimeo: -1,
+            max_msg_sz: -1,
+            recv_timeo: -1,
+            send_timeo: -1,
             ipv6: false,
             immediate: 0,
             filter: false,
@@ -299,11 +299,11 @@ impl Options {
             curve_server_key: [0; CURVE_KEYSIZE],
             socket_id: 0,
             conflate: false,
-            handshake_ivl: 30000,
+            handshake_intvl: 30000,
             connected: false,
             heartbeat_ttl: 0,
-            heartbeat_interval: 0,
-            heartbeat_timeout: -1,
+            heartbeat_intvl: 0,
+            heartbeat_timeo: -1,
             use_fd: -1,
             bound_device: String::new(),
             zap_enforce_domain: false,

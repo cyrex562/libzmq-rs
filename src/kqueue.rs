@@ -1,6 +1,6 @@
 use libc::{self, c_int, c_short, intptr_t, pid_t, timespec};
-use std::{io, ptr, slice};
 use std::os::unix::io::RawFd;
+use std::{io, ptr, slice};
 
 const MAX_IO_EVENTS: usize = 32;
 
@@ -53,7 +53,7 @@ impl Kqueue {
                 0,
                 udata as *mut _,
             );
-            
+
             if libc::kevent(self.kqueue_fd, &ev, 1, ptr::null_mut(), 0, ptr::null()) == -1 {
                 return Err(io::Error::last_os_error());
             }
@@ -73,7 +73,7 @@ impl Kqueue {
                 0,
                 ptr::null_mut(),
             );
-            
+
             if libc::kevent(self.kqueue_fd, &ev, 1, ptr::null_mut(), 0, ptr::null()) == -1 {
                 return Err(io::Error::last_os_error());
             }
@@ -93,14 +93,14 @@ impl Kqueue {
 
     pub fn rm_fd(&mut self, handle: Handle) -> io::Result<()> {
         let entry = unsafe { &*handle };
-        
+
         if entry.flag_pollin {
             self.kevent_delete(entry.fd, libc::EVFILT_READ)?;
         }
         if entry.flag_pollout {
             self.kevent_delete(entry.fd, libc::EVFILT_WRITE)?;
         }
-        
+
         self.retired.push(handle);
         Ok(())
     }
@@ -171,7 +171,7 @@ impl Kqueue {
 
             for ev in events.iter() {
                 let entry = &mut *(ev.udata as *mut PollEntry);
-                
+
                 if ev.flags & libc::EV_EOF as u16 != 0 {
                     entry.reactor.in_event();
                 }

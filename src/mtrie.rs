@@ -1,6 +1,6 @@
 // Copyright MPL-2.0
 
-pub struct Pipe;  // Placeholder for the original pipe_t class
+pub struct Pipe; // Placeholder for the original pipe_t class
 
 pub struct Mtrie<T> {
     _phantom: std::marker::PhantomData<T>,
@@ -9,7 +9,7 @@ pub struct Mtrie<T> {
 impl<T> Mtrie<T> {
     pub fn new() -> Self {
         Mtrie {
-            _phantom: std::marker::PhantomData
+            _phantom: std::marker::PhantomData,
         }
     }
 }

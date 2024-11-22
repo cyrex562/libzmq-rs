@@ -1,7 +1,7 @@
-use std::ffi::c_int;
 use crate::object::{Object, Own};
-use crate::session_base::{Engine, SocketBase};
 use crate::pipe::Pipe;
+use crate::session_base::{Engine, SocketBase};
+use std::ffi::c_int;
 // Forward declarations for external types
 // pub trait Object {}
 // pub trait Own: Object {}

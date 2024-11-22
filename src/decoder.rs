@@ -1,5 +1,4 @@
 use std::cmp;
-use std::mem;
 
 // Trait for allocator implementations
 pub trait DecoderAllocator {
@@ -17,7 +16,7 @@ pub trait Decoder {
 }
 
 // Base decoder struct
-pub struct DecoderBase<T, A> 
+pub struct DecoderBase<T, A>
 where
     A: DecoderAllocator,
 {
@@ -28,14 +27,14 @@ where
     buffer: Vec<u8>,
 }
 
-impl<T, A> DecoderBase<T, A> 
+impl<T, A> DecoderBase<T, A>
 where
     A: DecoderAllocator,
 {
     pub fn new(buf_size: usize, allocator: A) -> Self {
         let mut allocator = allocator;
         let buffer = allocator.allocate();
-        
+
         DecoderBase {
             next_step: None,
             read_pos: 0,
@@ -50,7 +49,7 @@ where
         &mut self,
         read_pos: usize,
         to_read: usize,
-        next: fn(&mut T, &[u8]) -> Result<(), std::io::Error>
+        next: fn(&mut T, &[u8]) -> Result<(), std::io::Error>,
     ) {
         self.read_pos = read_pos;
         self.to_read = to_read;
@@ -98,7 +97,7 @@ where
         // Normal copy case
         while bytes_used < size {
             let to_copy = cmp::min(self.to_read, size - bytes_used);
-            
+
             if self.read_pos as *const u8 != data[bytes_used..].as_ptr() {
                 self.buffer[self.read_pos..self.read_pos + to_copy]
                     .copy_from_slice(&data[bytes_used..bytes_used + to_copy]);

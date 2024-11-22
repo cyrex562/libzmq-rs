@@ -1,11 +1,11 @@
-use std::error::Error;
 use crate::message::Message;
+use std::error::Error;
 // #[derive(Debug)]
 // pub struct Message {
 //     flags: u32,
 //     data: Vec<u8>,
 // }
-// 
+//
 // impl Message {
 //     pub fn new() -> Self {
 //         Message {
@@ -13,7 +13,7 @@ use crate::message::Message;
 //             data: Vec::new(),
 //         }
 //     }
-// 
+//
 //     pub fn has_more(&self) -> bool {
 //         (self.flags & 1) != 0
 //     }
@@ -24,8 +24,7 @@ pub trait Pipe {
     fn check_read(&self) -> bool;
 }
 
-
-pub struct FairQueue<T: Pipe> {
+pub struct FairQueue {
     pipes: Vec<T>,
     active: usize,
     current: usize,
@@ -75,11 +74,11 @@ impl<T: Pipe> FairQueue<T> {
             if self.pipes[self.current].read(&mut msg) {
                 let current_pipe = self.current;
                 self.more = msg.has_more();
-                
+
                 if !self.more {
                     self.current = (self.current + 1) % self.active;
                 }
-                
+
                 return Ok((msg, current_pipe));
             }
 
@@ -138,7 +137,7 @@ mod tests {
     fn test_fair_queue_basic() {
         let mut fq = FairQueue::new();
         assert!(!fq.has_in());
-        
+
         fq.attach(MockPipe { has_message: true });
         assert!(fq.has_in());
     }

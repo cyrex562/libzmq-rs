@@ -1,10 +1,5 @@
 use crate::{
-    context::Context,
-    load_balancer::LoadBalancer,
-    message::Message,
-    pipe::Pipe,
-    socket::SocketBase,
-    utils::NonCopyable,
+    constants::ZMQ_PUSH, context::Context, load_balancer::LoadBalancer, message::Message, pipe::Pipe, socket::SocketBase, utils::NonCopyable
 };
 
 /// Push socket type (ZMQ_PUSH)
@@ -16,19 +11,24 @@ pub struct Push {
 impl Push {
     pub fn new(parent: &mut Context, tid: u32, sid: i32) -> Self {
         let mut socket = SocketBase::new(parent, tid, sid);
-        socket.set_socket_type(zmq_socket_type_t::ZMQ_PUSH);
-        
+        socket.set_socket_type(ZMQ_PUSH);
+
         Self {
             socket,
             lb: LoadBalancer::new(),
         }
     }
 
-    pub fn attach_pipe(&mut self, pipe: &mut Pipe, _subscribe_to_all: bool, _locally_initiated: bool) {
+    pub fn attach_pipe(
+        &mut self,
+        pipe: &mut Pipe,
+        _subscribe_to_all: bool,
+        _locally_initiated: bool,
+    ) {
         // Don't delay pipe termination as there is no one
         // to receive the delimiter
         pipe.set_nodelay();
-        
+
         debug_assert!(pipe.is_some());
         self.lb.attach(pipe);
     }

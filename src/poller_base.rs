@@ -56,10 +56,7 @@ impl PollerBase {
             .timers
             .iter()
             .filter(|(_, info)| {
-                std::ptr::eq(
-                    sink_ptr,
-                    &*info.sink as *const dyn IPollEvents
-                ) && info.id == id
+                std::ptr::eq(sink_ptr, &*info.sink as *const dyn IPollEvents) && info.id == id
             })
             .map(|(&k, _)| k)
             .collect();
@@ -133,7 +130,7 @@ impl WorkerPollerBase {
                 // Worker loop implementation would go here
             })
             .expect("Failed to spawn worker thread");
-        
+
         self.worker = Some(worker);
     }
 

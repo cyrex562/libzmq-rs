@@ -22,7 +22,7 @@ impl<T: Default + Copy, const S: usize> FastVector<T, S> {
         } else {
             static_buf.as_ptr() as *mut T
         };
-        
+
         Self {
             static_buf,
             buf,

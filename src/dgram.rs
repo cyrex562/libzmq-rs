@@ -67,7 +67,12 @@ impl DgramSocket {
         }
     }
 
-    pub fn attach_pipe(&mut self, pipe: Box<Pipe>, _subscribe_to_all: bool, _locally_initiated: bool) {
+    pub fn attach_pipe(
+        &mut self,
+        pipe: &mut Pipe,
+        _subscribe_to_all: bool,
+        _locally_initiated: bool,
+    ) {
         // DGRAM socket can only be connected to a single peer
         if self.pipe.is_none() {
             self.pipe = Some(pipe);
@@ -85,19 +90,26 @@ impl DgramSocket {
 
     pub fn send(&mut self, msg: &[u8], has_more: bool) -> Result<(), Error> {
         // If there's no out pipe, just drop it
-        let pipe = self.pipe.as_mut().ok_or_else(|| {
-            Error::new(ErrorKind::NotConnected, "No pipe connected")
-        })?;
+        let pipe = self
+            .pipe
+            .as_mut()
+            .ok_or_else(|| Error::new(ErrorKind::NotConnected, "No pipe connected"))?;
 
         // If this is the first part of the message
         if !self.more_out {
             if !has_more {
-                return Err(Error::new(ErrorKind::InvalidInput, "Expected multipart message"));
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "Expected multipart message",
+                ));
             }
         } else {
             // dgram messages are two part only, reject if more is set
             if has_more {
-                return Err(Error::new(ErrorKind::InvalidInput, "Unexpected message part"));
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "Unexpected message part",
+                ));
             }
         }
 

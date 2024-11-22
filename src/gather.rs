@@ -36,7 +36,8 @@ impl FairQueue {
     }
 
     fn pipe_terminated(&mut self, pipe: &Pipe) {
-        self.pipes.retain(|p| !Rc::ptr_eq(p, &Rc::new(pipe.clone())));
+        self.pipes
+            .retain(|p| !Rc::ptr_eq(p, &Rc::new(pipe.clone())));
     }
 
     fn has_in(&self) -> bool {

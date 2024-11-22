@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::mem;
 
 // Stats structures for tracking proxy metrics
@@ -31,7 +30,7 @@ enum ProxyState {
 // Constants
 const PROXY_BURST_SIZE: usize = 1000;
 
-pub struct Socket;  // Placeholder for ZMQ socket type
+pub struct Socket; // Placeholder for ZMQ socket type
 
 impl Socket {
     fn send(&self, _msg: &Message, _flags: i32) -> Result<(), Error> {
@@ -48,7 +47,7 @@ impl Socket {
 }
 
 #[derive(Default)]
-pub struct Message;  // Placeholder for ZMQ message type
+pub struct Message; // Placeholder for ZMQ message type
 
 impl Message {
     fn new() -> Result<Self, Error> {
@@ -73,7 +72,7 @@ impl Message {
 }
 
 #[derive(Debug)]
-pub struct Error;  // Placeholder for error type
+pub struct Error; // Placeholder for error type
 
 // Helper function to capture messages
 fn capture(capture_socket: Option<&Socket>, msg: &Message, more: bool) -> Result<(), Error> {
@@ -98,17 +97,18 @@ fn forward(
     for i in 0..PROXY_BURST_SIZE {
         // Forward all parts of one message
         loop {
-            match from.recv(msg, 1) {  // ZMQ_DONTWAIT = 1
+            match from.recv(msg, 1) {
+                // ZMQ_DONTWAIT = 1
                 Ok(()) => {
                     let nbytes = msg.size();
                     recv_stats.count += 1;
                     recv_stats.bytes += nbytes as u64;
 
-                    let more: i32 = from.get_sockopt(1)?;  // ZMQ_RCVMORE = 1
+                    let more: i32 = from.get_sockopt(1)?; // ZMQ_RCVMORE = 1
 
                     capture(capture, msg, more != 0)?;
 
-                    to.send(msg, if more != 0 { 2 } else { 0 })?;  // ZMQ_SNDMORE = 2
+                    to.send(msg, if more != 0 { 2 } else { 0 })?; // ZMQ_SNDMORE = 2
                     send_stats.count += 1;
                     send_stats.bytes += nbytes as u64;
 
@@ -131,7 +131,7 @@ fn handle_control(
     stats: &StatsProxy,
 ) -> Result<(), Error> {
     let mut msg = Message::new()?;
-    control.recv(&mut msg, 1)?;  // ZMQ_DONTWAIT = 1
+    control.recv(&mut msg, 1)?; // ZMQ_DONTWAIT = 1
 
     let command = msg.data();
     match command {
@@ -150,7 +150,7 @@ fn handle_control(
             for (i, &stat) in stats_array.iter().enumerate() {
                 msg.init_size(mem::size_of::<u64>())?;
                 // In real implementation, we'd copy stat to msg.data() here
-                control.send(&msg, if i < 7 { 2 } else { 0 })?;  // ZMQ_SNDMORE = 2
+                control.send(&msg, if i < 7 { 2 } else { 0 })?; // ZMQ_SNDMORE = 2
             }
         }
         b"PAUSE" => *state = ProxyState::Paused,
@@ -160,7 +160,8 @@ fn handle_control(
     }
 
     // Handle REP socket type
-    if control.get_sockopt::<i32>(3)? == 6 {  // ZMQ_TYPE = 3, ZMQ_REP = 6
+    if control.get_sockopt::<i32>(3)? == 6 {
+        // ZMQ_TYPE = 3, ZMQ_REP = 6
         msg.init_size(0)?;
         control.send(&msg, 0)?;
     }

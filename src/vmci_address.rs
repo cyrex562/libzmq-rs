@@ -1,6 +1,7 @@
-use std::ffi::{c_char, CStr};
-use std::os::raw::{c_int, c_uint};
 use std::mem;
+use std::os::raw::{c_int, c_uint};
+
+use crate::context::Context;
 
 const VMADDR_CID_ANY: c_uint = 0xFFFFFFFF;
 const VMADDR_PORT_ANY: c_uint = 0xFFFFFFFF;
@@ -123,9 +124,4 @@ impl VMCIAddress {
 // External function declarations that would need to be linked
 extern "C" {
     fn vmci_get_local_cid() -> c_uint;
-}
-
-// Note: Context trait/struct would need to be defined separately
-trait Context {
-    fn get_vmci_socket_family(&self) -> c_int;
 }

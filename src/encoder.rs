@@ -1,9 +1,9 @@
-
 use std::cmp;
-use std::mem;
 
 pub trait EncoderStep {
-    fn execute(&mut self, encoder: &mut Encoder<Self>) where Self: Sized;
+    fn execute(&mut self, encoder: &mut Encoder<Self>)
+    where
+        Self: Sized;
 }
 
 pub trait IEncoder {
@@ -16,8 +16,12 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn close(&mut self) -> i32 { 0 }
-    pub fn init(&mut self) -> i32 { 0 }
+    pub fn close(&mut self) -> i32 {
+        0
+    }
+    pub fn init(&mut self) -> i32 {
+        0
+    }
 }
 
 pub struct Encoder<T: EncoderStep> {
@@ -85,7 +89,8 @@ impl<T: EncoderStep> IEncoder for Encoder<T> {
 
             if pos == 0 && data.is_none() && self.to_write >= buffersize {
                 if let Some(write_pos) = self.write_pos {
-                    *data = Some(unsafe { std::slice::from_raw_parts_mut(write_pos, self.to_write) });
+                    *data =
+                        Some(unsafe { std::slice::from_raw_parts_mut(write_pos, self.to_write) });
                     pos = self.to_write;
                     self.write_pos = None;
                     self.to_write = 0;
@@ -96,11 +101,7 @@ impl<T: EncoderStep> IEncoder for Encoder<T> {
             let to_copy = cmp::min(self.to_write, buffersize - pos);
             if let Some(write_pos) = self.write_pos {
                 unsafe {
-                    std::ptr::copy_nonoverlapping(
-                        write_pos,
-                        buffer[pos..].as_mut_ptr(),
-                        to_copy
-                    );
+                    std::ptr::copy_nonoverlapping(write_pos, buffer[pos..].as_mut_ptr(), to_copy);
                 }
             }
             pos += to_copy;

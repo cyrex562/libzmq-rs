@@ -1,4 +1,3 @@
-
 //! Compile-time settings for ZMQ.
 
 /// Number of new messages in message pipe needed to trigger new memory
@@ -14,7 +13,7 @@ pub const COMMAND_PIPE_GRANULARITY: usize = 16;
 /// socket will process 100 inbound messages before doing the poll.
 /// If there are no unprocessed messages available, poll is done
 /// immediately. Decreasing the value trades overall latency for more
-/// real-time behaviour (less latency peaks).
+/// real-time behavior (less latency peaks).
 pub const INBOUND_POLL_RATE: usize = 100;
 
 /// Maximal delta between high and low watermark.

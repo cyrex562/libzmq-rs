@@ -1,8 +1,8 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 
-use std::ffi::{c_void, CStr, CString};
-use std::os::raw::{c_char, c_int, c_uint, c_ulong};
+use std::ffi::{c_void, CString};
+use std::os::raw::{c_char, c_uint};
 use std::ptr;
 
 // FFI bindings for NORM C API
@@ -35,7 +35,12 @@ struct NormRxStreamState {
 }
 
 impl NormRxStreamState {
-    fn new(norm_stream: NormObjectHandle, max_msg_size: i64, zero_copy: bool, in_batch_size: i32) -> Self {
+    fn new(
+        norm_stream: NormObjectHandle,
+        max_msg_size: i64,
+        zero_copy: bool,
+        in_batch_size: i32,
+    ) -> Self {
         Self {
             norm_stream,
             max_msg_size,
@@ -90,7 +95,7 @@ impl NormEngine {
     pub fn new() -> Self {
         Self {
             norm_instance: NORM_INSTANCE_INVALID,
-            norm_session: NORM_SESSION_INVALID, 
+            norm_session: NORM_SESSION_INVALID,
             norm_tx_stream: NORM_OBJECT_INVALID,
             is_sender: false,
             is_receiver: false,
@@ -123,18 +128,14 @@ impl NormEngine {
             // Parse address and port
             let addr_parts: Vec<&str> = addr_part.split(':').collect();
             if addr_parts.len() != 2 {
-                return Err(-1); 
+                return Err(-1);
             }
 
             let addr = CString::new(addr_parts[0]).unwrap();
             let port: u16 = addr_parts[1].parse().unwrap_or(0);
 
-            self.norm_session = norm_create_session(
-                self.norm_instance,
-                addr.as_ptr(),
-                port,
-                local_id
-            );
+            self.norm_session =
+                norm_create_session(self.norm_instance, addr.as_ptr(), port, local_id);
 
             if self.norm_session == NORM_SESSION_INVALID {
                 norm_destroy_instance(self.norm_instance);
@@ -155,7 +156,7 @@ impl NormEngine {
                 norm_stop_receiver(self.norm_session);
                 self.rx_states.clear();
             }
-            
+
             if self.is_sender {
                 norm_stop_sender(self.norm_session);
             }

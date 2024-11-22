@@ -1,50 +1,52 @@
 use std::mem;
 
-pub struct Msg {
-    flags: u32,
-}
+use crate::{message::Message, pipe::Pipe};
 
-impl Msg {
-    pub fn new() -> Self {
-        Self { flags: 0 }
-    }
+// pub struct Msg {
+//     flags: u32,
+// }
 
-    pub fn flags(&self) -> u32 {
-        self.flags
-    }
+// impl Msg {
+//     pub fn new() -> Self {
+//         Self { flags: 0 }
+//     }
 
-    pub fn has_more(&self) -> bool {
-        (self.flags & Self::MORE) != 0
-    }
+//     pub fn flags(&self) -> u32 {
+//         self.flags
+//     }
 
-    const MORE: u32 = 1;
-}
+//     pub fn has_more(&self) -> bool {
+//         (self.flags & Self::MORE) != 0
+//     }
 
-pub struct Pipe {
-    // Implementation details omitted for brevity
-}
+//     const MORE: u32 = 1;
+// }
 
-impl Pipe {
-    pub fn write(&mut self, _msg: &mut Msg) -> bool {
-        // Simplified implementation
-        true
-    }
+// pub struct Pipe {
+//     // Implementation details omitted for brevity
+// }
 
-    pub fn rollback(&mut self) {
-        // Simplified implementation
-    }
+// impl Pipe {
+//     pub fn write(&mut self, _msg: &mut Msg) -> bool {
+//         // Simplified implementation
+//         true
+//     }
 
-    pub fn flush(&mut self) {
-        // Simplified implementation
-    }
+//     pub fn rollback(&mut self) {
+//         // Simplified implementation
+//     }
 
-    pub fn check_write(&self) -> bool {
-        // Simplified implementation
-        true
-    }
-}
+//     pub fn flush(&mut self) {
+//         // Simplified implementation
+//     }
 
-pub struct Lb {
+//     pub fn check_write(&self) -> bool {
+//         // Simplified implementation
+//         true
+//     }
+// }
+
+pub struct LoadBalancer {
     pipes: Vec<Pipe>,
     active: usize,
     current: usize,
@@ -52,7 +54,7 @@ pub struct Lb {
     dropping: bool,
 }
 
-impl Lb {
+impl LoadBalancer {
     pub fn new() -> Self {
         Self {
             pipes: Vec::with_capacity(2),
@@ -88,11 +90,11 @@ impl Lb {
         self.active += 1;
     }
 
-    pub fn send(&mut self, msg: &mut Msg) -> Result<(), i32> {
+    pub fn send(&mut self, msg: &mut Message) -> Result<(), i32> {
         self.sendpipe(msg, None)
     }
 
-    pub fn sendpipe(&mut self, msg: &mut Msg, pipe: Option<&mut Pipe>) -> Result<(), i32> {
+    pub fn sendpipe(&mut self, msg: &mut Message, pipe: Option<&mut Pipe>) -> Result<(), i32> {
         if self.dropping {
             self.more = msg.has_more();
             self.dropping = self.more;
@@ -102,7 +104,7 @@ impl Lb {
         while self.active > 0 {
             if self.pipes[self.current].write(msg) {
                 if let Some(p) = pipe {
-                    *p = mem::replace(&mut self.pipes[self.current], Pipe {});
+                    *p = mem::replace(&mut self.pipes[self.current], Pipe::new());
                 }
                 break;
             }

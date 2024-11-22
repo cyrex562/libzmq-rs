@@ -1,3 +1,5 @@
+use crate::utils::zmq_curve_keypair;
+
 struct Person {
     age: i32,
 }
@@ -22,7 +24,7 @@ fn main() {
     println!("distributed (securely!) to peers wishing to connect to it.");
 
     // Generate curve keypair
-    match curve_keypair() {
+    match zmq_curve_keypair() {
         Ok((public_key, secret_key)) => {
             println!("\n== CURVE PUBLIC KEY ==");
             println!("{}", public_key);

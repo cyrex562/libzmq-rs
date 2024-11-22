@@ -1,6 +1,6 @@
+use crate::message::Message;
 use std::collections::HashSet;
 use std::error::Error;
-use crate::message::Message;
 
 const ZMQ_GROUP_MAX_LENGTH: usize = 255; // Assumed max length
 
@@ -10,7 +10,7 @@ const ZMQ_GROUP_MAX_LENGTH: usize = 255; // Assumed max length
 //     group: String,
 //     flags: u32,
 // }
-// 
+//
 // impl Msg {
 //     fn new() -> Self {
 //         Self {
@@ -19,26 +19,26 @@ const ZMQ_GROUP_MAX_LENGTH: usize = 255; // Assumed max length
 //             flags: 0,
 //         }
 //     }
-// 
+//
 //     fn init_join(&mut self) -> Result<(), Box<dyn Error>> {
 //         self.flags |= 1; // JOIN flag
 //         Ok(())
 //     }
-// 
+//
 //     fn init_leave(&mut self) -> Result<(), Box<dyn Error>> {
 //         self.flags |= 2; // LEAVE flag
 //         Ok(())
 //     }
-// 
+//
 //     fn set_group(&mut self, group: &str) -> Result<(), Box<dyn Error>> {
 //         self.group = group.to_string();
 //         Ok(())
 //     }
-// 
+//
 //     fn is_join(&self) -> bool {
 //         (self.flags & 1) != 0
 //     }
-// 
+//
 //     fn is_leave(&self) -> bool {
 //         (self.flags & 2) != 0
 //     }
@@ -110,7 +110,7 @@ impl Dish {
     fn recv_internal(&mut self, msg: &mut Message) -> Result<(), Box<dyn Error>> {
         loop {
             self.fq.recv(msg)?;
-            
+
             if self.subscriptions.contains(&msg.group) {
                 return Ok(());
             }

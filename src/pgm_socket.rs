@@ -37,7 +37,7 @@ pub struct PgmSocket {
     sock: pgm_sock_t,
     options: Options,
     receiver: bool,
-    pgm_msgv: *mut c_void,  // pgm_msgv_t*
+    pgm_msgv: *mut c_void, // pgm_msgv_t*
     pgm_msgv_len: usize,
     nbytes_rec: usize,
     nbytes_processed: usize,
@@ -109,11 +109,11 @@ impl PgmSocket {
         let rate = self.options.rate / 8;
         let size = (self.options.recovery_ivl as i64) * rate;
         let mut sqns = size / (tpdu as i64);
-        
+
         if sqns == 0 {
             sqns = 1;
         }
-        
+
         sqns as i32
     }
 }

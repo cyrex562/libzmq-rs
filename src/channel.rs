@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::blob::Blob;
 use crate::context::Context;
-use crate::io_thread::IoThread;
 use crate::message::Message;
 use crate::pipe::MsgFlags::MORE;
 use crate::pipe::Pipe;
@@ -11,7 +9,7 @@ use crate::socket_base::SocketBase;
 use std::sync::Arc;
 
 pub struct Channel {
-    pipe: Option<Arc<dyn Pipe>>,
+    pipe: Option<Pipe>,
     // other fields from SocketBase
     socket_base: SocketBase,
 }

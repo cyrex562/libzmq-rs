@@ -1,9 +1,11 @@
-use libc::{epoll_create1, epoll_ctl, epoll_wait, EPOLLERR, EPOLLHUP, EPOLLIN, EPOLLOUT, EPOLL_CLOEXEC};
+use libc::{
+    epoll_create1, epoll_ctl, epoll_wait, EPOLLERR, EPOLLHUP, EPOLLIN, EPOLLOUT, EPOLL_CLOEXEC,
+};
 use libc::{EPOLL_CTL_ADD, EPOLL_CTL_DEL, EPOLL_CTL_MOD};
 use std::collections::VecDeque;
 
-use std::os::unix::io::{AsRawFd, RawFd};
 use crate::wepoll::EPOLL_CTL_MOD;
+use std::os::unix::io::{AsRawFd, RawFd};
 
 const MAX_IO_EVENTS: usize = 128;
 const RETIRED_FD: RawFd = -1;
@@ -31,7 +33,7 @@ impl Epoll {
         if epoll_fd < 0 {
             return Err(std::io::Error::last_os_error());
         }
-        
+
         Ok(Epoll {
             epoll_fd,
             retired: VecDeque::new(),
@@ -40,27 +42,15 @@ impl Epoll {
     }
 
     pub fn add_fd(&mut self, fd: RawFd, events: Box<dyn PollEvents>) -> Box<PollEntry> {
-        let mut ev = libc::epoll_event {
-            events: 0,
-            u64: 0,
-        };
+        let mut ev = libc::epoll_event { events: 0, u64: 0 };
 
-        let mut entry = Box::new(PollEntry {
-            fd,
-            events,
-            ev,
-        });
+        let mut entry = Box::new(PollEntry { fd, events, ev });
 
         let ptr = &*entry as *const PollEntry as u64;
         entry.ev.u64 = ptr;
 
         unsafe {
-            epoll_ctl(
-                self.epoll_fd,
-                EPOLL_CTL_ADD,
-                fd,
-                &mut entry.ev as *mut _,
-            );
+            epoll_ctl(self.epoll_fd, EPOLL_CTL_ADD, fd, &mut entry.ev as *mut _);
         }
 
         self.load += 1;

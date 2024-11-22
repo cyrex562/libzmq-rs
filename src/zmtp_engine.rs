@@ -2,6 +2,10 @@ use std::convert::TryFrom;
 use std::io::{Read, Write};
 use std::mem;
 
+use crate::endpoint::EndpointUriPair;
+use crate::options::Options;
+use crate::types::ZmqRawFd;
+
 // Protocol revisions
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u8)]
@@ -32,26 +36,26 @@ pub struct ZmtpEngine {
 
     // Options
     options: Options,
-    
+
     // Message state
     routing_id_msg: Vec<u8>,
     pong_msg: Vec<u8>,
 }
 
-#[derive(Debug, Clone)]
-pub struct Options {
-    routing_id: Vec<u8>,
-    routing_id_size: usize,
-    heartbeat_interval: i32,
-    heartbeat_timeout: i32,
-    mechanism: SecurityMechanism,
-    as_server: bool,
-    socket_type: SocketType,
-    maxmsgsize: i64,
-    zero_copy: bool,
-    out_batch_size: usize,
-    in_batch_size: usize,
-}
+// #[derive(Debug, Clone)]
+// pub struct Options {
+//     routing_id: Vec<u8>,
+//     routing_id_size: usize,
+//     heartbeat_intvl: i32,
+//     heartbeat_timeo: i32,
+//     mechanism: SecurityMechanism,
+//     as_server: bool,
+//     socket_type: SocketType,
+//     max_msg_sz: i64,
+//     zero_copy: bool,
+//     out_batch_sz: usize,
+//     in_batch_sz: usize,
+// }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SecurityMechanism {
@@ -69,7 +73,7 @@ pub enum SocketType {
 }
 
 impl ZmtpEngine {
-    pub fn new(options: Options) -> Self {
+    pub fn new(fd: ZmqRawFd, options: Options, endpoint_uri_pair: EndpointUriPair) -> Self {
         Self {
             greeting_size: V2_GREETING_SIZE,
             greeting_recv: [0; V3_GREETING_SIZE],
@@ -83,9 +87,10 @@ impl ZmtpEngine {
         }
     }
 
+
     pub fn handshake(&mut self) -> Result<bool, std::io::Error> {
         debug_assert!(self.greeting_bytes_read < self.greeting_size);
-        
+
         // Receive the greeting
         let unversioned = match self.receive_greeting()? {
             -1 => return Ok(false),
@@ -111,7 +116,7 @@ impl ZmtpEngine {
                     if n == 0 {
                         return Err(std::io::Error::new(
                             std::io::ErrorKind::UnexpectedEof,
-                            "connection closed"
+                            "connection closed",
                         ));
                     }
                     self.greeting_bytes_read += n;
@@ -128,7 +133,7 @@ impl ZmtpEngine {
 
                     // Check right-most bit of 10th byte
                     if (self.greeting_recv[9] & 0x01) == 0 {
-                        unversioned = true; 
+                        unversioned = true;
                         break;
                     }
 
@@ -151,12 +156,12 @@ impl ZmtpEngine {
 
             // Handle minor version and mechanism
             if self.greeting_recv[REVISION_POS] == ZmtpVersion::V1_0 as u8
-                || self.greeting_recv[REVISION_POS] == ZmtpVersion::V2_0 as u8 
+                || self.greeting_recv[REVISION_POS] == ZmtpVersion::V2_0 as u8
             {
                 self.greeting_send[SIGNATURE_SIZE + 1] = self.options.socket_type as u8;
             } else {
                 self.greeting_send[SIGNATURE_SIZE + 1] = 1; // Minor version
-                
+
                 // Set mechanism
                 let mechanism_name = match self.options.mechanism {
                     SecurityMechanism::Null => b"NULL",
@@ -168,7 +173,7 @@ impl ZmtpEngine {
                 let start = SIGNATURE_SIZE + 2;
                 self.greeting_send[start..start + mechanism_name.len()]
                     .copy_from_slice(mechanism_name);
-                
+
                 self.greeting_size = V3_GREETING_SIZE;
             }
         }
@@ -178,7 +183,7 @@ impl ZmtpEngine {
         &mut self,
         unversioned: bool,
         revision: u8,
-        minor: u8
+        minor: u8,
     ) -> Result<bool, std::io::Error> {
         if unversioned {
             self.handshake_v1_0_unversioned()
@@ -186,13 +191,11 @@ impl ZmtpEngine {
             match revision {
                 x if x == ZmtpVersion::V1_0 as u8 => self.handshake_v1_0(),
                 x if x == ZmtpVersion::V2_0 as u8 => self.handshake_v2_0(),
-                x if x == ZmtpVersion::V3_x as u8 => {
-                    match minor {
-                        0 => self.handshake_v3_0(),
-                        _ => self.handshake_v3_1(),
-                    }
-                }
-                _ => self.handshake_v3_1()
+                x if x == ZmtpVersion::V3_x as u8 => match minor {
+                    0 => self.handshake_v3_0(),
+                    _ => self.handshake_v3_1(),
+                },
+                _ => self.handshake_v3_1(),
             }
         }
     }
@@ -216,7 +219,7 @@ impl ZmtpEngine {
     }
 
     fn handshake_v3_1(&mut self) -> Result<bool, std::io::Error> {
-        Ok(true) 
+        Ok(true)
     }
 
     // Helper methods for I/O operations

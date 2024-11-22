@@ -31,6 +31,7 @@ pub enum ZmqError {
     InProgress,
     SystemError(std::io::Error),
     InvalidInput,
+    ParsingError(String),
 }
 
 impl fmt::Display for ZmqError {
@@ -60,6 +61,8 @@ impl fmt::Display for ZmqError {
             #[cfg(windows)]
             ZmqError::InProgress => write!(f, "Operation in progress"),
             ZmqError::SystemError(e) => write!(f, "{}", e),
+            ZmqError::InvalidInput => todo!(),
+            ZmqError::ParsingError(_) => todo!(),
         }
     }
 }
@@ -89,6 +92,8 @@ impl Error for ZmqError {
             #[cfg(windows)]
             ZmqError::InProgress => "Operation in progress",
             ZmqError::SystemError(e) => e.description(),
+            ZmqError::InvalidInput => todo!(),
+            ZmqError::ParsingError(_) => todo!(),
         }
     }
 }

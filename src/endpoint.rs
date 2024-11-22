@@ -1,8 +1,8 @@
 #[derive(Clone, Copy, PartialEq)]
 pub enum EndpointType {
-    None,       // a connection-less endpoint
-    Bind,       // a connection-oriented bind endpoint
-    Connect,    // a connection-oriented connect endpoint
+    None,    // a connection-less endpoint
+    Bind,    // a connection-oriented bind endpoint
+    Connect, // a connection-oriented connect endpoint
 }
 
 pub struct EndpointUriPair {
@@ -20,10 +20,10 @@ impl EndpointUriPair {
         }
     }
 
-    pub fn with_values(local: String, remote: String, local_type: EndpointType) -> Self {
+    pub fn with_values(local: &str, remote: &str, local_type: EndpointType) -> Self {
         Self {
-            local,
-            remote,
+            local: local.to_string(),
+            remote: remote.to_string(),
             local_type,
         }
     }
@@ -40,10 +40,10 @@ impl EndpointUriPair {
     }
 }
 
-pub fn make_unconnected_connect_endpoint_pair(endpoint: String) -> EndpointUriPair {
-    EndpointUriPair::with_values(String::new(), endpoint, EndpointType::Connect)
+pub fn make_unconnected_connect_endpoint_pair(endpoint: &str) -> EndpointUriPair {
+    EndpointUriPair::with_values("", endpoint, EndpointType::Connect)
 }
 
-pub fn make_unconnected_bind_endpoint_pair(endpoint: String) -> EndpointUriPair {
-    EndpointUriPair::with_values(endpoint, String::new(), EndpointType::Bind)
+pub fn make_unconnected_bind_endpoint_pair(endpoint: &str) -> EndpointUriPair {
+    EndpointUriPair::with_values(endpoint, "", EndpointType::Bind)
 }

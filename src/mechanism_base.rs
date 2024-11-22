@@ -38,15 +38,13 @@ impl<'a> MechanismBase<'a> {
 
     pub fn handle_error_reason(&self, error_reason: &[u8]) {
         if error_reason.len() == STATUS_CODE_LEN {
-            let chars: Vec<char> = error_reason
-                .iter()
-                .map(|&b| b as char)
-                .collect();
+            let chars: Vec<char> = error_reason.iter().map(|&b| b as char).collect();
 
-            if chars[1] == ZERO_DIGIT 
-               && chars[2] == ZERO_DIGIT 
-               && chars[0] >= '3' 
-               && chars[0] <= '5' {
+            if chars[1] == ZERO_DIGIT
+                && chars[2] == ZERO_DIGIT
+                && chars[0] >= '3'
+                && chars[0] <= '5'
+            {
                 let status_code = (chars[0] as i32 - ZERO_DIGIT as i32) * FACTOR;
                 // TODO: Implement proper event handling for authentication failure
                 println!("Authentication failed with status code: {}", status_code);

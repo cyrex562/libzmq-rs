@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use std::sync::Arc;
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 // Message type placeholder
 #[derive(Clone)]
@@ -124,8 +124,9 @@ impl YPipe {
         !self.queue.is_empty()
     }
 
-    pub fn probe<F>(&self, predicate: F) -> bool 
-    where F: Fn(&Msg) -> bool 
+    pub fn probe<F>(&self, predicate: F) -> bool
+    where
+        F: Fn(&Msg) -> bool,
     {
         self.queue.front().map_or(false, predicate)
     }
@@ -135,77 +136,55 @@ impl YPipe {
     }
 }
 
-// pub struct Pipe {
-//     in_pipe: Option<YPipe>,
-//     out_pipe: Option<YPipe>,
-//     in_active: bool,
-//     out_active: bool,
-//     hwm: i32,
-//     lwm: i32,
-//     msgs_read: u64,
-//     msgs_written: u64,
-//     peers_msgs_read: u64,
-//     peer: Option<Arc<Pipe>>,
-//     sink: Option<Box<dyn PipeEvents>>,
-//     state: PipeState,
-//     delay: bool,
-//     router_socket_routing_id: Blob,
-//     server_socket_routing_id: u32,
-//     conflate: bool,
-//     endpoint_pair: EndpointUriPair,
-//     disconnect_msg: Msg,
-// }
+pub struct Pipe {
+    in_pipe: Option<YPipe>,
+    out_pipe: Option<YPipe>,
+    in_active: bool,
+    out_active: bool,
+    hwm: i32,
+    lwm: i32,
+    msgs_read: u64,
+    msgs_written: u64,
+    peers_msgs_read: u64,
+    peer: Option<Arc<Pipe>>,
+    sink: Option<Box<dyn PipeEvents>>,
+    state: PipeState,
+    delay: bool,
+    router_socket_routing_id: Blob,
+    server_socket_routing_id: u32,
+    conflate: bool,
+    endpoint_pair: EndpointUriPair,
+    disconnect_msg: Msg,
+}
 
-pub trait Pipe {
-    // in_pipe: Option<YPipe>,
-    fn get_in_pipe(&mut self) -> Option<YPipe>;
-    fn set_in_pipe(&mut self, in_pipe: YPipe);
-    // out_pipe: Option<YPipe>,
-    fn get_out_pipe(&mut self) -> Option<YPipe>;
-    fn set_out_pipe(&mut self, out_pipe: YPipe);
-    // hwm: i32,
-    fn get_hwm(&mut self) -> i32;
-    fn set_hwm(&mut self, hwm: i32);
-    // lwm: i32,
-    fn get_lwm(&mut self) -> i32;
-    fn set_lwm(&mut self, lwm: i32);
-    // msgs_read: u64,
-    fn get_msgs_read(&mut self) -> u64;
-    fn set_msgs_read(&mut self, msgs_read: u64);
-    // msgs_written: u64,
-    fn get_msgs_written(&mut self) -> u64;
-    // peers_msgs_read: u64,
-    fn get_peers_msgs_read(&mut self) -> u64;
-    fn set_peers_msgs_read(&mut self, peers_msgs_read: u64);
-    // peer: Option<Arc<Pipe>>,
-    fn get_peer(&mut self) -> Option<Arc<Pipe>>;
-    fn set_peer(&mut self, peer: Arc<Pipe>);
-    // sink: Option<Box<dyn PipeEvents>>,
-    fn get_sink(&mut self) -> Option<Box<dyn PipeEvents>>;
-    fn set_sink(&mut self, sink: Box<dyn PipeEvents>);
-    // state: PipeState,
-    fn get_state(&mut self) -> PipeState;
-    fn set_state(&mut self, state: PipeState);
-    // delay: bool,
-    fn get_delay(&mut self) -> bool;
-    fn set_delay(&mut self, delay: bool);
-    // router_socket_routing_id: Blob,
-    fn get_router_socket_routing_id(&mut self) -> Blob;
-    fn set_router_socket_routing_id(&mut self, router_socket_routing_id: Blob);
-    // server_socket_routing_id: u32,
-    fn get_server_socket_routing_id(&mut self) -> u32;
-    fn set_server_socket_routing_id(&mut self, server_socket_routing_id: u32);
-    // conflate: bool,
-    fn get_conflate(&mut self) -> bool;
-    fn set_conflate(&mut self, conflate: bool);
-    // endpoint_pair: EndpointUriPair,
-    fn get_endpoint_pair(&mut self) -> EndpointUriPair;
-    fn set_endpoint_pair(&mut self, endpoint_pair: EndpointUriPair);
-    // disconnect_msg: Msg,
-    fn get_disconnect_msg(&mut self) -> Msg;
-    fn set_disconnect_msg(&mut self, disconnect_msg: Msg);
+impl Pipe {
+    pub fn new() {
+        Self {
+            in_pipe: None,
+            out_pipe: None,
+            in_active: true,
+            out_active: true,
+            hwm: 0,
+            lwm: 0,
+            msgs_read: 0,
+            msgs_written: 0,
+            peers_msgs_read: 0,
+            peer: None,
+            sink: None,
+            state: PipeState::Active,
+            delay: true,
+            router_socket_routing_id: Blob { data: Vec::new() },
+            server_socket_routing_id: 0,
+            conflate: false,
+            endpoint_pair: EndpointUriPair {
+                local: String::new(),
+                remote: String::new(),
+            },
+            disconnect_msg: Msg::new(),
+        }
+    }
 
-    fn check_read(&mut self) -> bool {
+    pub fn check_read(&mut self) -> bool {
         if !self.in_active {
             return false;
         }
@@ -230,11 +209,11 @@ pub trait Pipe {
         true
     }
 
-    fn compute_lwm(hwm: i32) -> i32 {
+    pub fn compute_lwm(hwm: i32) -> i32 {
         (hwm + 1) / 2
     }
 
-    fn process_delimiter(&mut self) {
+    pub fn process_delimiter(&mut self) {
         match self.state {
             PipeState::Active => {
                 self.state = PipeState::DelimiterReceived;
@@ -249,7 +228,7 @@ pub trait Pipe {
         }
     }
 
-    fn rollback(&mut self) {
+    pub fn rollback(&mut self) {
         if let Some(out_pipe) = &mut self.out_pipe {
             while let Some(msg) = out_pipe.queue.pop_back() {
                 if msg.flags() & MsgFlags::MORE as u32 != 0 {
@@ -363,28 +342,13 @@ enum PipeState {
 // }
 
 // Create a pair of pipes for bidirectional communication
-pub fn create_pipe_pair(
-    conflate: [bool; 2],
-    hwms: [i32; 2],
-) -> (Pipe, Pipe) {
+pub fn create_pipe_pair(conflate: [bool; 2], hwms: [i32; 2]) -> (Pipe, Pipe) {
     let pipe1 = YPipe::new(conflate[0]);
     let pipe2 = YPipe::new(conflate[1]);
 
-    let mut pipe_a = Pipe::new(
-        pipe1,
-        pipe2.clone(),
-        hwms[0],
-        hwms[1],
-        conflate[0],
-    );
+    let mut pipe_a = Pipe::new(pipe1, pipe2.clone(), hwms[0], hwms[1], conflate[0]);
 
-    let mut pipe_b = Pipe::new(
-        pipe2,
-        pipe1.clone(),
-        hwms[1],
-        hwms[0],
-        conflate[1],
-    );
+    let mut pipe_b = Pipe::new(pipe2, pipe1.clone(), hwms[1], hwms[0], conflate[1]);
 
     let pipe_a_arc = Arc::new(pipe_a.clone());
     let pipe_b_arc = Arc::new(pipe_b.clone());

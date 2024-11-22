@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
 use sodiumoxide::crypto::box_;
-use std::convert::TryInto;
 
 const CRYPTO_BOX_NONCEBYTES: usize = 24;
 const CRYPTO_BOX_PUBLICKEYBYTES: usize = 32;
@@ -33,7 +32,7 @@ impl CurveClientTools {
         curve_server_key: &[u8; CRYPTO_BOX_PUBLICKEYBYTES],
     ) -> Self {
         let (cn_public, cn_secret) = box_::gen_keypair();
-        
+
         Self {
             public_key: *curve_public_key,
             secret_key: *curve_secret_key,
@@ -51,10 +50,10 @@ impl CurveClientTools {
         hello_nonce[16..24].copy_from_slice(&cn_nonce.to_le_bytes());
 
         let hello_plaintext = vec![0u8; CRYPTO_BOX_ZEROBYTES + 64];
-        
+
         let server_pk = box_::PublicKey(self.server_key);
         let cn_sk = box_::SecretKey(self.cn_secret);
-        
+
         let hello_box = box_::seal(
             &hello_plaintext,
             &box_::Nonce(hello_nonce),
@@ -89,12 +88,9 @@ impl CurveClientTools {
         let cn_sk = box_::SecretKey(self.cn_secret);
 
         let welcome_box = &msg_data[24..168];
-        let welcome_plaintext = box_::open(
-            welcome_box,
-            &box_::Nonce(welcome_nonce),
-            &server_pk,
-            &cn_sk,
-        ).map_err(|_| "Failed to open welcome box")?;
+        let welcome_plaintext =
+            box_::open(welcome_box, &box_::Nonce(welcome_nonce), &server_pk, &cn_sk)
+                .map_err(|_| "Failed to open welcome box")?;
 
         self.cn_server.copy_from_slice(&welcome_plaintext[..32]);
         self.cn_cookie.copy_from_slice(&welcome_plaintext[32..128]);
@@ -122,7 +118,7 @@ impl CurveClientTools {
 
         let cn_server_pk = box_::PublicKey(self.cn_server);
         let secret_sk = box_::SecretKey(self.secret_key);
-        
+
         let vouch_box = box_::seal(
             &vouch_plaintext,
             &box_::Nonce(vouch_nonce),
@@ -134,11 +130,13 @@ impl CurveClientTools {
         initiate_nonce[..16].copy_from_slice(b"CurveZMQINITIATE");
         initiate_nonce[16..24].copy_from_slice(&cn_nonce.to_le_bytes());
 
-        let mut initiate_plaintext = vec![0u8; CRYPTO_BOX_ZEROBYTES + 128 + metadata_plaintext.len()];
+        let mut initiate_plaintext =
+            vec![0u8; CRYPTO_BOX_ZEROBYTES + 128 + metadata_plaintext.len()];
         let offset = CRYPTO_BOX_ZEROBYTES;
         initiate_plaintext[offset..offset + 32].copy_from_slice(&self.public_key);
         initiate_plaintext[offset + 32..offset + 48].copy_from_slice(&vouch_nonce[8..24]);
-        initiate_plaintext[offset + 48..offset + 128].copy_from_slice(&vouch_box[CRYPTO_BOX_BOXZEROBYTES..]);
+        initiate_plaintext[offset + 48..offset + 128]
+            .copy_from_slice(&vouch_box[CRYPTO_BOX_BOXZEROBYTES..]);
         initiate_plaintext[offset + 128..].copy_from_slice(metadata_plaintext);
 
         let initiate_box = box_::seal(
@@ -148,7 +146,8 @@ impl CurveClientTools {
             &box_::SecretKey(self.cn_secret),
         );
 
-        let mut initiate = Vec::with_capacity(113 + 128 + CRYPTO_BOX_BOXZEROBYTES + metadata_plaintext.len());
+        let mut initiate =
+            Vec::with_capacity(113 + 128 + CRYPTO_BOX_BOXZEROBYTES + metadata_plaintext.len());
         initiate.extend_from_slice(b"\x08INITIATE");
         initiate.extend_from_slice(&self.cn_cookie);
         initiate.extend_from_slice(&cn_nonce.to_le_bytes());

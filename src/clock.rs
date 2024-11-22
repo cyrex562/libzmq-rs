@@ -1,15 +1,8 @@
 use std::time;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-// use winapi::shared::minwindef::LARGE_INTEGER;
 #[cfg(target_os = "windows")]
-use winapi::{
-    um::{
-        // libloaderapi::{GetProcAddress, LoadLibraryA, FreeLibrary},
-        sysinfoapi::{GetTickCount, GetTickCount64},
-    },
-    shared::ntdef::LARGE_INTEGER,
-};
+use winapi::um::sysinfoapi::GetTickCount64;
 
 #[cfg(target_os = "macos")]
 use mach::{
@@ -32,11 +25,11 @@ fn alt_clock_gettime(clock_id: clockid_t, ts: &mut timespec) -> i32 {
     unsafe {
         let mut cclock: clock_serv_t = std::mem::zeroed();
         let mut mts: mach_timespec_t = std::mem::zeroed();
-        
+
         host_get_clock_service(mach_host_self(), clock_id, &mut cclock);
         clock_get_time(cclock, &mut mts);
         mach_port_deallocate(mach_task_self(), cclock);
-        
+
         ts.tv_sec = mts.tv_sec;
         ts.tv_nsec = mts.tv_nsec;
         0
@@ -63,7 +56,7 @@ impl Clock {
             // unsafe {
             //     winapi::um::profileapi::QueryPerformanceFrequency(&mut ticks_per_second);
             //     winapi::um::profileapi::QueryPerformanceCounter(&mut tick);
-            //     
+            //
             //     let ticks_div = (ticks_per_second.QuadPart() as f64) / (USECS_PER_SEC as f64);
             //     (tick.QuadPart() as f64 / ticks_div) as u64
             // }
@@ -117,14 +110,14 @@ impl Clock {
     //             ((high as u64) << 32) | (low as u64)
     //         }
     //     }
-    // 
+    //
     //     #[cfg(target_arch = "aarch64")]
     //     unsafe {
     //         let mut pmccntr: u64;
     //         std::arch::asm!("mrs {}, pmccntr_el0", out(reg) pmccntr);
     //         pmccntr
     //     }
-    // 
+    //
     //     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     //     {
     //         // Fallback for other architectures

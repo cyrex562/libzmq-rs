@@ -1,6 +1,7 @@
 #![allow(non_camel_case_types)]
 
-use crate::{constants::ZMQ_EVENT_ALL, zmq_msg_t};
+use crate::constants::ZMQ_EVENT_ALL;
+use crate::message::zmq_msg_t;
 
 // Socket types
 pub const ZMQ_SERVER: i32 = 12;

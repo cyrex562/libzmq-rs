@@ -1,5 +1,5 @@
-use std::ffi::c_void;
 use libc::c_int;
+use std::ffi::c_void;
 
 use crate::constants::{ZMQ_EAGAIN, ZMQ_EFSM, ZMQ_EPROTO};
 use crate::message::Message;
@@ -127,7 +127,7 @@ impl NullMechanism {
 
         let command_sent = self.ready_command_sent || self.error_command_sent;
         let command_received = self.ready_command_received || self.error_command_received;
-        
+
         if command_sent && command_received {
             Status::Error
         } else {

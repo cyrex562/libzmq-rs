@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MPL-2.0 */
 use crate::context::Context;
 use crate::fair_queue::FairQueue;
-use crate::lb::Lb;
+use crate::load_balancer::LoadBalancer;
 use crate::message::*;
 use crate::options::Options;
 use crate::pipe::Pipe;
@@ -9,14 +9,15 @@ use crate::session_base::ZMQ_CLIENT;
 use crate::socket_base::SocketBase;
 use libc::EINVAL;
 
-pub struct Client<T: Pipe> {
+pub struct Client {
     options: Options,
-    fq: FairQueue<T>,
-    lb: Lb,
+    fq: FairQueue,
+    lb: LoadBalancer,
     socket_base: SocketBase,
+    pipe: Pipe,
 }
 
-impl<T: Pipe> Client<T> {
+impl Client {
     pub fn new(parent: &Context, tid: u32, sid: i32) -> Self {
         let mut options = Options::default();
         options.can_send_hello_msg = true;
@@ -25,8 +26,9 @@ impl<T: Pipe> Client<T> {
         let mut c = Client {
             options,
             fq: FairQueue::new(),
-            lb: Lb::new(),
+            lb: LoadBalancer::new(),
             socket_base: SocketBase::new(parent, tid, sid, false),
+            pipe: Pipe::new(),
         };
         c.socket_base.options.type_ = ZMQ_CLIENT;
     }

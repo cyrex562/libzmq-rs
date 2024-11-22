@@ -1,4 +1,5 @@
 use libc::c_int;
+use std::os::raw;
 
 pub const ZMQ_PROBE_ROUTER: i32 = 51;
 
@@ -173,7 +174,7 @@ pub const ZMQ_SNDBUF: i32 = 11;
 // #define ZMQ_RCVBUF 12
 pub const ZMQ_RCVBUF: i32 = 12;
 // #define ZMQ_RCVMORE 13
-pub const ZMQ_RCVMORE: i32 = 13;
+pub const ZMQ_RECV_MORE: i32 = 13;
 // #define ZMQ_FD 14
 pub const ZMQ_FD: i32 = 14;
 // #define ZMQ_EVENTS 15
@@ -319,7 +320,34 @@ pub const ZMQ_EPROTONOSUPPORT: c_int = libc::EPROTONOSUPPORT;
 #[cfg(windows)]
 pub const ZMQ_EPROTONOSUPPORT: c_int = winapi::um::winsock2::WSAEPROTONOSUPPORT;
 
-#[cfg(unix)]
-pub type ZmqSockAddrIn6 = libc::sockaddr_in6;
-#[cfg(windows)]
-pub type ZmqSockAddrIn6 = winapi::um::ws2ipdef::sockaddr_in6;
+// #[cfg(unix)]
+// pub type ZmqSockAddrIn6 = libc::sockaddr_in6;
+// #[cfg(windows)]
+// pub type ZmqSockAddrIn6 = winapi::shared::ws2ipdef::SOCKADDR_IN6;
+// 
+// #[cfg(unix)]
+// pub type ZmqSockAddrIn = libc::sockaddr_in;
+// 
+// #[cfg(windows)]
+// pub type ZmqSockAddrIn = winapi::shared::ws2def::SOCKADDR_IN;
+
+
+// Version info
+// pub const ZMQ_VERSION_MAJOR: raw::c_int = 4;
+// pub const ZMQ_VERSION_MINOR: raw::c_int = 3;
+// pub const ZMQ_VERSION_PATCH: raw::c_int = 6;
+// Socket types
+pub const ZMQ_PAIR: raw::c_int = 0;
+pub const ZMQ_PUB: raw::c_int = 1;
+pub const ZMQ_SUB: raw::c_int = 2;
+pub const ZMQ_REQ: raw::c_int = 3;
+pub const ZMQ_REP: raw::c_int = 4;
+pub const ZMQ_DEALER: raw::c_int = 5;
+pub const ZMQ_ROUTER: raw::c_int = 6;
+pub const ZMQ_PULL: raw::c_int = 7;
+pub const ZMQ_PUSH: raw::c_int = 8;
+pub const ZMQ_XPUB: raw::c_int = 9;
+pub const ZMQ_XSUB: raw::c_int = 10;
+pub const ZMQ_STREAM: raw::c_int = 11;
+// Error codes
+pub const EFAULT: i32 = 14;

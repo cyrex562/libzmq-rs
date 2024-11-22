@@ -1,5 +1,3 @@
-#![cfg(unix)]
-
 use std::ffi::CStr;
 use std::os::unix::net::UnixAddr;
 use std::path::Path;
@@ -17,11 +15,14 @@ impl IpcAddress {
     }
 
     pub fn from_raw(sa: &UnixAddr) -> Self {
-        Self { address: sa.clone() }
+        Self {
+            address: sa.clone(),
+        }
     }
 
     pub fn resolve(&mut self, path: &str) -> std::io::Result<()> {
-        if path.len() >= 108 { // SUN_PATH length limit
+        if path.len() >= 108 {
+            // SUN_PATH length limit
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "Path too long",
@@ -47,7 +48,9 @@ impl IpcAddress {
 
     pub fn to_string(&self) -> std::io::Result<String> {
         let prefix = "ipc://";
-        let path = self.address.as_pathname()
+        let path = self
+            .address
+            .as_pathname()
             .and_then(|p| p.to_str())
             .unwrap_or("");
 

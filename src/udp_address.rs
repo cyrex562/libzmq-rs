@@ -1,5 +1,6 @@
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
+use crate::err::ZmqError;
 
 #[derive(Debug, Clone)]
 pub struct UdpAddress {
@@ -83,17 +84,15 @@ impl UdpAddress {
                     self.bind_interface = -1;
                 }
             }
-        } else {
-            if is_multicast || !bind {
-                self.bind_address = if ipv6 {
-                    SocketAddr::from(([0, 0, 0, 0, 0, 0, 0, 0], target_addr.port()))
-                } else {
-                    SocketAddr::from(([0, 0, 0, 0], target_addr.port()))
-                };
-                self.bind_interface = 0;
+        } else if is_multicast || !bind {
+            self.bind_address = if ipv6 {
+                SocketAddr::from(([0, 0, 0, 0, 0, 0, 0, 0], target_addr.port()))
             } else {
-                self.bind_address = target_addr;
-            }
+                SocketAddr::from(([0, 0, 0, 0], target_addr.port()))
+            };
+            self.bind_interface = 0;
+        } else {
+            self.bind_address = target_addr;
         }
 
         self.target_address = target_addr;
@@ -109,8 +108,8 @@ impl UdpAddress {
         Ok(())
     }
 
-    pub fn to_string(&self) -> String {
-        self.address.clone()
+    pub fn to_string(&self) -> Result<String,ZmqError> {
+        Ok(self.address.clone())
     }
 
     pub fn family(&self) -> i32 {

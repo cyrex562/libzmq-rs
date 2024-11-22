@@ -29,6 +29,14 @@ pub trait SocketBehavior {
     fn send(&mut self, msg: Message, flags: i32) -> ZmqResult<()>;
     fn recv(&mut self, flags: i32) -> ZmqResult<Message>;
     fn close(&mut self) -> ZmqResult<()>;
+
+    fn attach_pipe(&mut self, pipe: &mut Pipe, _subscribe_to_all: bool, _locally_initiated: bool);
+
+    fn has_in(&self) -> bool;
+
+    fn read_activated(&mut self, pipe: &mut Pipe);
+
+    fn pipe_terminated(&mut self, pipe: &mut Pipe);
 }
 
 // Core structures
@@ -236,3 +244,7 @@ impl SocketBehavior for PubSocket {
 impl SocketBehavior for SubSocket {
     // ... implement socket behavior for SUB
 }
+
+// pub trait SocketOps {
+
+// }

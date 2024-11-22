@@ -1,12 +1,10 @@
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::str::FromStr;
-use std::ffi::CStr;
-use std::os::raw::c_char;
 
 #[cfg(unix)]
-use std::net::Ipv6Addr;
-#[cfg(unix)]
 use libc::{self, sockaddr, sockaddr_in, sockaddr_in6, AF_INET, AF_INET6};
+#[cfg(unix)]
+use std::net::Ipv6Addr;
 use windows_sys::Win32::Networking::WinSock::{AF_INET, AF_INET6};
 
 #[derive(Clone, Debug)]
@@ -200,10 +198,9 @@ impl IpResolver {
 
         // Resolve address
         let socket_addr = if self.options.allow_dns {
-            (addr_str, port)
-                .to_socket_addrs()?
-                .next()
-                .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "Address not found"))?
+            (addr_str, port).to_socket_addrs()?.next().ok_or_else(|| {
+                std::io::Error::new(std::io::ErrorKind::NotFound, "Address not found")
+            })?
         } else {
             let ip = IpAddr::from_str(addr_str).map_err(|_| {
                 std::io::Error::new(

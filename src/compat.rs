@@ -1,6 +1,3 @@
-#[cfg(target_os = "windows")]
-pub use windows_compat::*;
-
 #[cfg(not(target_os = "windows"))]
 pub use unix_compat::*;
 
@@ -26,11 +23,11 @@ mod unix_compat {
 
         let copy_len = dest.len().min(src_len);
         dest[..copy_len].copy_from_slice(&src[..copy_len]);
-        
+
         if copy_len < dest.len() {
             dest[copy_len] = 0; // Null terminator
         }
-        
+
         src_len
     }
 

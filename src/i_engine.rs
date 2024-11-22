@@ -1,9 +1,6 @@
-use std::fmt;
-
 // Assuming these types exist in other modules
-pub struct IoThread;
-pub struct SessionBase;
-pub struct EndpointUriPair;
+
+use crate::{endpoint::EndpointUriPair, io_thread::IoThread, mechanism_base::SessionBase};
 
 #[derive(Debug)]
 pub enum ErrorReason {

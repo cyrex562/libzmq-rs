@@ -103,7 +103,7 @@ impl<T: Eq + std::hash::Hash + Clone> GenericMtrie<T> {
         // Handle non-empty prefix traversal and removal
         let mut result = RemoveResult::NotFound;
         let c = prefix[0];
-        
+
         if let Some(next) = self.get_next_node(c) {
             result = next.remove(&prefix[1..], value);
             if next.is_redundant() {
@@ -131,22 +131,21 @@ impl<T: Eq + std::hash::Hash + Clone> GenericMtrie<T> {
             match data_iter.next() {
                 None => break,
                 Some(&c) if current.count == 0 => break,
-                Some(&c) => {
-                    match &current.next {
-                        NextNode::Single(node) if current.count == 1 && c == current.min => {
-                            current = node;
-                        }
-                        NextNode::Table(table) if c >= current.min 
-                            && c < current.min + current.count as u8 => {
-                            if let Some(Some(node)) = table.get((c - current.min) as usize) {
-                                current = node;
-                            } else {
-                                break;
-                            }
-                        }
-                        _ => break,
+                Some(&c) => match &current.next {
+                    NextNode::Single(node) if current.count == 1 && c == current.min => {
+                        current = node;
                     }
-                }
+                    NextNode::Table(table)
+                        if c >= current.min && c < current.min + current.count as u8 =>
+                    {
+                        if let Some(Some(node)) = table.get((c - current.min) as usize) {
+                            current = node;
+                        } else {
+                            break;
+                        }
+                    }
+                    _ => break,
+                },
             }
         }
     }
@@ -165,7 +164,7 @@ impl<T: Eq + std::hash::Hash + Clone> GenericMtrie<T> {
         let new_count = (new_max - new_min + 1) as u16;
 
         let mut new_table = vec![None; new_count as usize];
-        
+
         match std::mem::replace(&mut self.next, NextNode::Empty) {
             NextNode::Single(node) if self.count == 1 => {
                 let idx = (self.min - new_min) as usize;
@@ -211,7 +210,7 @@ impl<T: Eq + std::hash::Hash + Clone> GenericMtrie<T> {
             NextNode::Table(table) => {
                 let idx = (c - self.min) as usize;
                 table[idx] = None;
-                
+
                 if self.live_nodes == 1 {
                     // Compact to single node
                     let mut single_node = None;
@@ -239,16 +238,16 @@ mod tests {
     #[test]
     fn test_basic_operations() {
         let mut mtrie = GenericMtrie::new();
-        
+
         // Test add
         assert!(mtrie.add(b"test", 1));
         assert!(!mtrie.add(b"test", 2));
-        
+
         // Test match
         let mut matches = Vec::new();
         mtrie.match_prefix(b"test", |&v| matches.push(v));
         assert_eq!(matches, vec![1, 2]);
-        
+
         // Test remove
         assert_eq!(mtrie.remove(b"test", &1), RemoveResult::ValuesRemain);
         assert_eq!(mtrie.remove(b"test", &2), RemoveResult::LastValueRemoved);

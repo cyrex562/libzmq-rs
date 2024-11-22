@@ -2,8 +2,8 @@
 #![allow(dead_code)]
 
 use std::os::unix::io::RawFd;
-use std::vec::Vec;
 use std::ptr;
+use std::vec::Vec;
 
 // Constants
 const RETIRED_FD: RawFd = -1;
@@ -81,7 +81,7 @@ impl Pollset {
         if (fd as usize) >= self.fd_table.len() {
             self.fd_table.resize(fd as usize + 1, None);
         }
-        
+
         let handle = Box::new(*entry);
         self.fd_table[fd as usize] = Some(handle.clone());
         handle
@@ -109,7 +109,7 @@ impl Pollset {
         if !handle.flag_pollin {
             let pc = PollCtl {
                 fd: handle.fd,
-                cmd: 3, // PS_MOD
+                cmd: 3,    // PS_MOD
                 events: 1, // POLLIN
             };
 
@@ -160,11 +160,14 @@ impl Pollset {
     }
 
     pub fn loop_poll(&mut self) {
-        let mut polldata_array = vec![libc::pollfd { 
-            fd: 0, 
-            events: 0, 
-            revents: 0 
-        }; MAX_IO_EVENTS];
+        let mut polldata_array = vec![
+            libc::pollfd {
+                fd: 0,
+                events: 0,
+                revents: 0
+            };
+            MAX_IO_EVENTS
+        ];
 
         while !self.stopping {
             let timeout = 0; // Would need timer execution implementation
@@ -174,7 +177,7 @@ impl Pollset {
                     self.pollset_fd,
                     polldata_array.as_mut_ptr(),
                     MAX_IO_EVENTS,
-                    if timeout > 0 { timeout } else { -1 }
+                    if timeout > 0 { timeout } else { -1 },
                 )
             };
 
@@ -191,7 +194,7 @@ impl Pollset {
                     if pe.fd == RETIRED_FD {
                         continue;
                     }
-                    
+
                     // Handle events...
                     // Implementation would need proper event handling
                 }

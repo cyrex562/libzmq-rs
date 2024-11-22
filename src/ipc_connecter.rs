@@ -1,6 +1,9 @@
 use std::io::{self, Error, ErrorKind};
 
-use winapi::{shared::cfg, um::winsock2::{ioctlsocket, FIONBIO, SOCKET}};
+use winapi::{
+    shared::cfg,
+    um::winsock2::{ioctlsocket, FIONBIO, SOCKET},
+};
 #[cfg(windows)]
 use windows_sys::Win32::Networking::WinSock::AF_UNIX;
 

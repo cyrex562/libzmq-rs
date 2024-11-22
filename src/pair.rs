@@ -1,4 +1,3 @@
-use std::os::raw::c_int;
 
 const ZMQ_PAIR: i32 = 0;
 const EAGAIN: i32 = 11;

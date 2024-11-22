@@ -66,7 +66,7 @@ impl PgmReceiver {
         let (socket_fd, waiting_pipe_fd) = self.pgm_socket.get_receiver_fds();
         self.socket_handle = self.add_fd(socket_fd);
         self.pipe_handle = self.add_fd(waiting_pipe_fd);
-        
+
         self.set_pollin(self.pipe_handle);
         self.set_pollin(self.socket_handle);
 
@@ -87,7 +87,9 @@ impl PgmReceiver {
         assert!(peer.joined);
 
         let decoder = peer.decoder.as_mut().expect("No decoder");
-        session.push_msg(decoder.msg()).expect("Failed to push message");
+        session
+            .push_msg(decoder.msg())
+            .expect("Failed to push message");
 
         if self.insize > 0 {
             match self.process_input(decoder) {
@@ -120,7 +122,7 @@ impl PgmReceiver {
                 self.inpos = self.inpos.add(n);
             }
             self.insize -= n;
-            
+
             if n == 0 {
                 break;
             }

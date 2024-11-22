@@ -35,12 +35,14 @@ pub struct Mailbox {
 impl Mailbox {
     pub fn new() -> Self {
         let mailbox = Mailbox {
-            cpipe: YPipe { _phantom: std::marker::PhantomData },
+            cpipe: YPipe {
+                _phantom: std::marker::PhantomData,
+            },
             signaler: Signaler {},
             sync: Mutex::new(()),
             active: false,
         };
-        
+
         // Initialize in passive state
         assert!(!mailbox.cpipe_check_read());
         mailbox
@@ -77,16 +79,16 @@ impl IMailbox for Mailbox {
         }
 
         match self.signaler.wait(timeout) {
-            Ok(_) => {
-                match self.signaler.recv() {
-                    Ok(_) => {
-                        self.active = true;
-                        let cmd = self.cpipe.read()
-                            .expect("Command must be available after signal");
-                        Ok(cmd)
-                    },
-                    Err(e) => Err(e),
+            Ok(_) => match self.signaler.recv() {
+                Ok(_) => {
+                    self.active = true;
+                    let cmd = self
+                        .cpipe
+                        .read()
+                        .expect("Command must be available after signal");
+                    Ok(cmd)
                 }
+                Err(e) => Err(e),
             },
             Err(e) => Err(e),
         }

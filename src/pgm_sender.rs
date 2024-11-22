@@ -1,13 +1,8 @@
 #[cfg(feature = "openpgm")]
 use {
-    crate::endpoint_uri_pair::EndpointUriPair,
-    crate::io_object::IoObject,
-    crate::io_thread::IoThread,
-    crate::message::Message,
-    crate::pgm_socket::PgmSocket,
-    crate::session_base::SessionBase,
-    crate::v1_encoder::V1Encoder,
-    std::ptr,
+    crate::endpoint_uri_pair::EndpointUriPair, crate::io_object::IoObject,
+    crate::io_thread::IoThread, crate::message::Message, crate::pgm_socket::PgmSocket,
+    crate::session_base::SessionBase, crate::v1_encoder::V1Encoder, std::ptr,
 };
 
 // Timer IDs
@@ -55,10 +50,10 @@ impl PgmSender {
 
     pub fn init(&mut self, udp_encapsulation: bool, network: &str) -> Result<(), Error> {
         self.pgm_socket.init(udp_encapsulation, network)?;
-        
+
         self.out_buffer_size = self.pgm_socket.get_max_tsdu_size();
         self.out_buffer = Some(vec![0; self.out_buffer_size]);
-        
+
         Ok(())
     }
 
@@ -151,7 +146,10 @@ impl PgmSender {
             self.has_tx_timer = false;
         }
 
-        match self.pgm_socket.send(&self.out_buffer.as_ref().unwrap()[..self.write_size]) {
+        match self
+            .pgm_socket
+            .send(&self.out_buffer.as_ref().unwrap()[..self.write_size])
+        {
             Ok(n) if n == self.write_size => {
                 self.write_size = 0;
             }

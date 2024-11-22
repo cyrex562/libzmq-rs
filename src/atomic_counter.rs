@@ -1,4 +1,5 @@
 use std::sync::atomic::{AtomicU32, Ordering};
+#[cfg(feature = "use_mutex")]
 use std::sync::Mutex;
 
 pub struct AtomicCounter {

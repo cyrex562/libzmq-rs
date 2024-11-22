@@ -358,3 +358,9 @@ impl Drop for Message {
 
 // Implementation of Clone would go here if needed
 // Implementation of Debug would go here if needed
+
+// Basic types and structures
+#[repr(C)]
+pub struct zmq_msg_t {
+    field0: [u8; 64], // Internal implementation detail
+}

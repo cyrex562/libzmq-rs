@@ -1,6 +1,15 @@
 use std::string::String;
 
-use crate::{constants::{ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_HELLO, ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND, ZMQ_PROTOCOL_ERROR_ZMTP_UNSPECIFIED}, err::ZmqError, message::Message, options::Options, session_base::SessionBase};
+use crate::{
+    constants::{
+        ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_HELLO,
+        ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND, ZMQ_PROTOCOL_ERROR_ZMTP_UNSPECIFIED,
+    },
+    err::ZmqError,
+    message::Message,
+    options::Options,
+    session_base::SessionBase,
+};
 
 // State enum to replace the implicit state machine
 #[derive(PartialEq)]
@@ -98,7 +107,7 @@ impl PlainServer {
         }
 
         let mut pos = HELLO_PREFIX.len();
-        
+
         // Extract username
         if pos >= data.len() {
             self.session.get_socket().event_handshake_failed_protocol(
@@ -107,10 +116,10 @@ impl PlainServer {
             );
             return Err(ZmqError::Protocol);
         }
-        
+
         let username_len = data[pos] as usize;
         pos += 1;
-        
+
         if pos + username_len > data.len() {
             self.session.get_socket().event_handshake_failed_protocol(
                 &self.session.get_endpoint(),
@@ -118,7 +127,7 @@ impl PlainServer {
             );
             return Err(ZmqError::Protocol);
         }
-        
+
         let username = String::from_utf8_lossy(&data[pos..pos + username_len]).to_string();
         pos += username_len;
 
@@ -167,24 +176,21 @@ impl PlainServer {
 
         msg.init_size(ERROR_PREFIX.len() + 1 + EXPECTED_STATUS_CODE_LEN as usize)
             .expect("Failed to initialize error message");
-        
-        let mut data = Vec::with_capacity(ERROR_PREFIX.len() + 1 + EXPECTED_STATUS_CODE_LEN as usize);
+
+        let mut data =
+            Vec::with_capacity(ERROR_PREFIX.len() + 1 + EXPECTED_STATUS_CODE_LEN as usize);
         data.extend_from_slice(ERROR_PREFIX);
         data.push(EXPECTED_STATUS_CODE_LEN);
         data.extend_from_slice(self.status_code.as_bytes());
-        
+
         msg.copy_from_slice(&data);
     }
 
     fn send_zap_request(&self, username: &str, password: &str) {
         let credentials = [username.as_bytes(), password.as_bytes()];
         let credentials_sizes = [username.len(), password.len()];
-        
-        self.zap_client_send_request(
-            "PLAIN",
-            &credentials,
-            &credentials_sizes,
-        );
+
+        self.zap_client_send_request("PLAIN", &credentials, &credentials_sizes);
     }
 
     // Helper functions would be implemented here...

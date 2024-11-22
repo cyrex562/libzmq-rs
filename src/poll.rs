@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+use std::os::raw::{c_int, c_short};
 use std::os::unix::io::RawFd;
 use std::vec::Vec;
 
@@ -181,4 +183,12 @@ impl Poll {
 impl PollEvents for () {
     fn in_event(&self) {}
     fn out_event(&self) {}
+}
+
+#[repr(C)]
+pub struct zmq_pollitem_t {
+    pub socket: *mut c_void,
+    pub fd: c_int,
+    pub events: c_short,
+    pub revents: c_short,
 }

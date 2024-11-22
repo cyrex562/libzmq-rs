@@ -1,5 +1,3 @@
-use std::fmt;
-
 // Forward declarations
 pub struct Context;
 pub struct Poller;
@@ -32,9 +30,8 @@ impl IoThread {
         };
 
         if io_thread.mailbox.get_fd() != -1 {
-            io_thread.mailbox_handle = Some(unsafe {
-                (*io_thread.poller).add_fd(io_thread.mailbox.get_fd(), &io_thread)
-            });
+            io_thread.mailbox_handle =
+                Some(unsafe { (*io_thread.poller).add_fd(io_thread.mailbox.get_fd(), &io_thread) });
             if let Some(handle) = io_thread.mailbox_handle {
                 unsafe {
                     (*io_thread.poller).set_pollin(handle);
@@ -89,7 +86,7 @@ impl PollEvents for IoThread {
             match self.mailbox.recv(&mut cmd, 0) {
                 Ok(_) => {
                     // Process command
-                },
+                }
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break,
                 Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
                 Err(_) => break,

@@ -29,6 +29,7 @@ winapi = { version = "0.3", features = [
     "handleapi",
     "winbase",
     "ws2ipdef",
+    "ws2def",
 ] }
 windows-sys = { version = "0.59.0", features = [
     "Win32_Foundation",
@@ -46,14 +47,17 @@ mach = "0.3"
 hex = "0.4"
 
 [features]
-
+default = []
 vmci = []
 ws = []
 wss = []
 ipc = []
-linux = []
-vxworks = []
 curve = []
 gssapi = []
 draft = []
 libsodium = []
+tipc = []
+pgm = []
+use_mutex = []
+norm = []
+pollset = []

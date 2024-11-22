@@ -1,17 +1,19 @@
-use std::sync::{Condvar, Mutex, MutexGuard};
-use std::time::{Duration, Instant};
+use std::sync::{Mutex, MutexGuard};
+use std::time::Duration;
 
 #[cfg(target_os = "windows")]
-use windows_sys::Win32::System::Threading::{CONDITION_VARIABLE, InitializeConditionVariable, WakeAllConditionVariable};
+use windows_sys::Win32::System::Threading::{
+    InitializeConditionVariable, WakeAllConditionVariable, CONDITION_VARIABLE,
+};
 
 /// Condition variable that encapsulates OS mutex in a platform-independent way
 pub struct ConditionVariable {
     #[cfg(not(any(target_os = "windows", target_os = "vxworks")))]
     inner: Condvar,
-    
+
     #[cfg(target_os = "windows")]
     inner: CONDITION_VARIABLE,
-    
+
     #[cfg(target_os = "vxworks")]
     listeners: Mutex<Vec<std::sync::mpsc::Sender<()>>>,
 }
@@ -24,7 +26,7 @@ impl ConditionVariable {
                 inner: Condvar::new(),
             }
         }
-        
+
         #[cfg(target_os = "windows")]
         {
             let mut cv: CONDITION_VARIABLE = unsafe { std::mem::zeroed() };
@@ -33,7 +35,7 @@ impl ConditionVariable {
             }
             Self { inner: cv }
         }
-        
+
         #[cfg(target_os = "vxworks")]
         {
             Self {
@@ -51,14 +53,14 @@ impl ConditionVariable {
                 {
                     Ok(self.inner.wait(guard).map_err(|_| ())?)
                 }
-                
+
                 #[cfg(target_os = "windows")]
                 unsafe {
                     // Windows-specific implementation would go here
                     // This is a simplified version
                     Ok(guard)
                 }
-                
+
                 #[cfg(target_os = "vxworks")]
                 {
                     // VxWorks-specific implementation would go here
@@ -67,7 +69,7 @@ impl ConditionVariable {
             }
             Some(timeout) => {
                 let timeout = Duration::from_millis(timeout as u64);
-                
+
                 #[cfg(not(any(target_os = "windows", target_os = "vxworks")))]
                 {
                     match self.inner.wait_timeout(guard, timeout).map_err(|_| ())? {
@@ -80,7 +82,7 @@ impl ConditionVariable {
                         }
                     }
                 }
-                
+
                 #[cfg(any(target_os = "windows", target_os = "vxworks"))]
                 {
                     // Platform-specific timeout implementation would go here
@@ -95,12 +97,12 @@ impl ConditionVariable {
         {
             self.inner.notify_all();
         }
-        
+
         #[cfg(target_os = "windows")]
         unsafe {
             WakeAllConditionVariable(&mut self.inner);
         }
-        
+
         #[cfg(target_os = "vxworks")]
         {
             if let Ok(listeners) = self.listeners.lock() {

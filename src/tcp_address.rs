@@ -7,11 +7,12 @@ use libc::{sa_family_t, sockaddr, sockaddr_in, sockaddr_in6, AF_INET, AF_INET6};
 #[cfg(windows)]
 use winapi::shared::ws2def::{AF_INET, AF_INET6, SOCKADDR as sockaddr, SOCKADDR_IN as sockaddr_in};
 
-use crate::constants::ZmqSockAddrIn6;
+use crate::err::ZmqError;
+use crate::socket::{ZmqSockAddr, ZmqSockAddrIn, ZmqSockAddrIn6};
 
 #[derive(Clone)]
 pub enum IpAddrEnum {
-    V4(sockaddr_in),
+    V4(ZmqSockAddrIn),
     V6(ZmqSockAddrIn6),
 }
 
@@ -35,22 +36,21 @@ impl TcpAddress {
         }
     }
 
-    pub fn from_sockaddr(sa: &sockaddr, sa_len: usize) -> Self {
-        let mut addr = TcpAddress::new();
-
-        unsafe {
-            match (*sa).sa_family as i32 {
-                AF_INET if sa_len >= mem::size_of::<sockaddr_in>() => {
-                    addr.address = IpAddrEnum::V4(*(sa as *const _ as *const sockaddr_in));
-                }
-                AF_INET6 if sa_len >= mem::size_of::<ZmqSockAddrIn6>() => {
-                    addr.address = IpAddrEnum::V6(*(sa as *const _ as *const ZmqSockAddrIn6));
-                }
-                _ => {}
-            }
-        }
-
-        addr
+    pub fn from_sockaddr_in(sai: &ZmqSockAddrIn) -> Self {
+        let mut tcp_addr = TcpAddress::new();
+        tcp_addr.address = IpAddrEnum::V4(sai.clone());
+        tcp_addr
+    }
+    
+    pub fn from_sockaddr_in6(sai: &ZmqSockAddrIn6) -> Self {
+        let mut tcp_addr = TcpAddress::new();
+        tcp_addr.address = IpAddrEnum::V6(sai.clone());
+        tcp_addr
+    }
+    
+    pub fn from_sockaddr(sa: &ZmqSockAddr) -> Self {
+        let mut tcp_addr = TcpAddress::new();
+        
     }
 
     pub fn resolve(&mut self, name: &str, local: bool, ipv6: bool) -> Result<(), i32> {
@@ -94,12 +94,10 @@ impl TcpAddress {
             } else {
                 return Err(-1);
             }
+        } else if let Ok(addr) = Ipv4Addr::from_str(host) {
+            IpAddr::V4(addr)
         } else {
-            if let Ok(addr) = Ipv4Addr::from_str(host) {
-                IpAddr::V4(addr)
-            } else {
-                return Err(-1);
-            }
+            return Err(-1);
         };
 
         // Create appropriate socket address
@@ -123,7 +121,7 @@ impl TcpAddress {
         Ok(())
     }
 
-    pub fn to_string(&self) -> Result<String, i32> {
+    pub fn to_string(&self) -> Result<String, ZmqError> {
         let (addr, port) = match &self.address {
             IpAddrEnum::V4(sa) => {
                 let ip = Ipv4Addr::from(unsafe { sa.sin_addr.s_addr }.to_ne_bytes());

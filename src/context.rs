@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicI32, AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
+use std::sync::Mutex;
 
 // Constants
 const ZMQ_CTX_TAG_VALUE_GOOD: u32 = 0xabadcafe;
@@ -20,11 +20,11 @@ pub struct Endpoint {
     options: Options,
 }
 
-// Pending connection information  
+// Pending connection information
 pub struct PendingConnection {
     endpoint: Endpoint,
     connect_pipe: Pipe,
-    bind_pipe: Pipe, 
+    bind_pipe: Pipe,
 }
 
 // Thread context
@@ -39,8 +39,8 @@ pub struct ThreadContext {
 impl ThreadContext {
     pub fn new() -> Self {
         ThreadContext {
-            thread_priority: 0, // ZMQ_THREAD_PRIORITY_DFLT
-            thread_sched_policy: 0, // ZMQ_THREAD_SCHED_POLICY_DFLT 
+            thread_priority: 0,     // ZMQ_THREAD_PRIORITY_DFLT
+            thread_sched_policy: 0, // ZMQ_THREAD_SCHED_POLICY_DFLT
             thread_affinity_cpus: HashSet::new(),
             thread_name_prefix: String::new(),
             opt_sync: Mutex::new(()),
@@ -52,15 +52,15 @@ impl ThreadContext {
 
         if value.len() == std::mem::size_of::<i32>() {
             let val = i32::from_ne_bytes(value.try_into().unwrap());
-            
+
             match option {
                 // ZMQ_THREAD_SCHED_POLICY
                 1 if val >= 0 => {
                     self.thread_sched_policy = val;
                     return Ok(());
                 }
-                
-                // ZMQ_THREAD_PRIORITY  
+
+                // ZMQ_THREAD_PRIORITY
                 2 if val >= 0 => {
                     self.thread_priority = val;
                     return Ok(());
@@ -83,7 +83,7 @@ impl ThreadContext {
                     value.copy_from_slice(&self.thread_sched_policy.to_ne_bytes());
                     return Ok(());
                 }
-                
+
                 _ => {}
             }
         }
@@ -97,12 +97,12 @@ pub struct Context {
     tag: u32,
     starting: AtomicBool,
     terminating: AtomicBool,
-    
+
     // Synchronization
     slot_sync: Mutex<()>,
     endpoints_sync: Mutex<()>,
     opt_sync: Mutex<()>,
-    
+
     // Configuration
     max_sockets: AtomicI32,
     io_thread_count: AtomicI32,
@@ -113,7 +113,7 @@ pub struct Context {
 
     // Storage
     sockets: Vec<Socket>,
-    io_threads: Vec<IoThread>, 
+    io_threads: Vec<IoThread>,
     slots: Vec<Option<Mailbox>>,
     empty_slots: Vec<u32>,
     endpoints: HashMap<String, Endpoint>,
@@ -128,13 +128,13 @@ impl Context {
             tag: ZMQ_CTX_TAG_VALUE_GOOD,
             starting: AtomicBool::new(true),
             terminating: AtomicBool::new(false),
-            
+
             slot_sync: Mutex::new(()),
             endpoints_sync: Mutex::new(()),
             opt_sync: Mutex::new(()),
-            
+
             max_sockets: AtomicI32::new(ZMQ_MAX_SOCKETS_DFLT),
-            io_thread_count: AtomicI32::new(ZMQ_IO_THREADS_DFLT), 
+            io_thread_count: AtomicI32::new(ZMQ_IO_THREADS_DFLT),
             ipv6: AtomicBool::new(false),
             blocky: AtomicBool::new(true),
             max_msgsz: AtomicI32::new(i32::MAX),
@@ -146,7 +146,7 @@ impl Context {
             empty_slots: Vec::new(),
             endpoints: HashMap::new(),
             pending_connections: HashMap::new(),
-            
+
             thread_ctx: ThreadContext::new(),
         }
     }
@@ -175,7 +175,7 @@ impl Context {
 
         if !self.starting.load(Ordering::SeqCst) {
             self.terminating.store(true, Ordering::SeqCst);
-            
+
             // Stop all sockets
             for socket in &self.sockets {
                 socket.stop();
@@ -188,7 +188,7 @@ impl Context {
 
         // Cleanup and drop context
         self.tag = ZMQ_CTX_TAG_VALUE_BAD;
-        
+
         Ok(())
     }
 
@@ -214,6 +214,10 @@ impl Context {
     }
 
     // Additional methods would go here...
+    #[cfg(feature = "vmci")]
+    pub fn get_vmci_socket_family(&self) -> c_int {
+        todo!()
+    }
 }
 
 // Required traits for Socket, IoThread, etc would be defined here
@@ -232,7 +236,7 @@ pub trait PipeTrait {
 }
 
 pub trait MailboxTrait {
-    // Mailbox methods... 
+    // Mailbox methods...
 }
 
 // Options struct would be defined here

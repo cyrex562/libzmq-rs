@@ -33,7 +33,7 @@ impl Peer {
             peer_last_routing_id: 0,
             sync: Mutex::new(()),
         };
-        
+
         // Initialize base "server_t" equivalent here if needed
         peer
     }
@@ -54,7 +54,12 @@ impl Peer {
         self.peer_last_routing_id
     }
 
-    pub fn attach_pipe(&mut self, pipe: &mut Pipe, subscribe_to_all: bool, locally_initiated: bool) {
+    pub fn attach_pipe(
+        &mut self,
+        pipe: &mut Pipe,
+        subscribe_to_all: bool,
+        locally_initiated: bool,
+    ) {
         // Call equivalent of server_t::xattach_pipe first
         self.server_attach_pipe(pipe, subscribe_to_all, locally_initiated);
         self.peer_last_routing_id = pipe.get_server_socket_routing_id();
@@ -66,7 +71,12 @@ impl Peer {
         Ok(())
     }
 
-    fn server_attach_pipe(&mut self, _pipe: &mut Pipe, _subscribe_to_all: bool, _locally_initiated: bool) {
+    fn server_attach_pipe(
+        &mut self,
+        _pipe: &mut Pipe,
+        _subscribe_to_all: bool,
+        _locally_initiated: bool,
+    ) {
         // Implementation needed
     }
 }

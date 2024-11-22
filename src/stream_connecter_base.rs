@@ -1,10 +1,20 @@
-use std::net::TcpStream;
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, RawFd};
 
 use winapi::um::winsock2::closesocket;
 
-use crate::{address::Address, io_thread::IoThread, options::Options, random::generate_random, raw_engine::RawEngine, session_base::SessionBase, socket_base::SocketBase, types::ZmqRawFd, zmtp_engine::ZmtpEngine};
+use crate::{
+    address::Address,
+    endpoint::{EndpointType, EndpointUriPair},
+    io_thread::IoThread,
+    options::Options,
+    random::generate_random,
+    raw_engine::RawEngine,
+    session_base::SessionBase,
+    socket_base::SocketBase,
+    types::ZmqRawFd,
+    zmtp_engine::ZmtpEngine,
+};
 
 // Constants
 const RETIRED_FD: ZmqRawFd = u64::MAX;
@@ -19,20 +29,20 @@ enum TimerId {
 }
 
 // Base traits
-trait IoObject {
+pub trait IoObject {
     fn in_event(&mut self);
     fn out_event(&mut self);
     fn timer_event(&mut self, id: TimerId);
 }
 
-trait Own {
+pub trait Own {
     fn process_plug(&mut self);
     fn process_term(&mut self, linger: i32);
 }
 
 // Main struct
-pub struct StreamConnecterBase {
-    addr: Box<Address>,
+pub struct StreamConnecterBase<'a> {
+    addr: Address<'a>,
     s: ZmqRawFd,
     handle: Handle,
     endpoint: String,
@@ -44,10 +54,10 @@ pub struct StreamConnecterBase {
     options: Options,
 }
 
-impl StreamConnecterBase {
+impl<'a> StreamConnecterBase<'a> {
     pub fn new(
         io_thread: &IoThread,
-        session: Box<SessionBase>,
+        session: &SessionBase,
         options: Options,
         addr: Box<Address>,
         delayed_start: bool,
@@ -70,7 +80,7 @@ impl StreamConnecterBase {
     }
 
     fn add_reconnect_timer(&mut self) {
-        if self.options.reconnect_ivl > 0 {
+        if self.options.reconnect_intvl > 0 {
             let interval = self.get_new_reconnect_ivl();
             self.add_timer(interval, TimerId::ReconnectTimer);
             self.socket.event_connect_retried(&self.endpoint, interval);
@@ -79,26 +89,26 @@ impl StreamConnecterBase {
     }
 
     fn get_new_reconnect_ivl(&mut self) -> i32 {
-        if self.options.reconnect_ivl_max > 0 {
+        if self.options.reconnect_intvl_max > 0 {
             let candidate_interval = if self.current_reconnect_ivl == -1 {
-                self.options.reconnect_ivl
+                self.options.reconnect_intvl
             } else if self.current_reconnect_ivl > i32::MAX / 2 {
                 i32::MAX
             } else {
                 self.current_reconnect_ivl * 2
             };
 
-            self.current_reconnect_ivl = if candidate_interval > self.options.reconnect_ivl_max {
-                self.options.reconnect_ivl_max
+            self.current_reconnect_ivl = if candidate_interval > self.options.reconnect_intvl_max {
+                self.options.reconnect_intvl_max
             } else {
                 candidate_interval
             };
             self.current_reconnect_ivl
         } else {
             if self.current_reconnect_ivl == -1 {
-                self.current_reconnect_ivl = self.options.reconnect_ivl;
+                self.current_reconnect_ivl = self.options.reconnect_intvl;
             }
-            let random_jitter = generate_random() % self.options.reconnect_ivl;
+            let random_jitter = generate_random() % self.options.reconnect_intvl;
             if self.current_reconnect_ivl < i32::MAX - random_jitter {
                 self.current_reconnect_ivl + random_jitter
             } else {
@@ -132,7 +142,8 @@ impl StreamConnecterBase {
     }
 
     fn create_engine(&mut self, fd: ZmqRawFd, local_address: &str) {
-        let endpoint_pair = EndpointPair::new(local_address, &self.endpoint);
+        let endpoint_pair =
+            EndpointUriPair::with_values(local_address, &self.endpoint, EndpointType::None);
 
         let engine = if self.options.raw_socket {
             Box::new(RawEngine::new(fd, &self.options, endpoint_pair))
@@ -146,7 +157,7 @@ impl StreamConnecterBase {
     }
 }
 
-impl IoObject for StreamConnecterBase {
+impl<'a> IoObject for StreamConnecterBase<'a> {
     fn in_event(&mut self) {
         self.out_event();
     }
@@ -163,7 +174,7 @@ impl IoObject for StreamConnecterBase {
     }
 }
 
-impl Own for StreamConnecterBase {
+impl<'a> Own for StreamConnecterBase<'a> {
     fn process_plug(&mut self) {
         if self.delayed_start {
             self.add_reconnect_timer();

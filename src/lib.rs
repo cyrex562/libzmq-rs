@@ -1,8 +1,14 @@
+//!
+//! This is the main file for the ZeroMQ FFI bindings.
+//! All functions in this file should allow for calling by external apps, and conform to C/C++ calling conventions.
+
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+use crate::context::Context;
+use constants::{EFAULT, ZMQ_VERSION_MAJOR, ZMQ_VERSION_MINOR, ZMQ_VERSION_PATCH};
 use std::ffi::c_void;
-use std::os::raw::{c_int, c_short};
+use std::os::raw::c_int;
 use std::ptr;
 
 mod address;
@@ -19,10 +25,15 @@ mod condition_variable;
 mod config;
 mod constants;
 mod context;
+#[cfg(feature = "curve")]
 mod curve_client;
+#[cfg(feature = "curve")]
 mod curve_client_tools;
+#[cfg(feature = "curve")]
 mod curve_keygen;
+#[cfg(feature = "curve")]
 mod curve_mechanism_base;
+#[cfg(feature = "curve")]
 mod curve_server;
 mod dbuffer;
 mod dealer;
@@ -38,8 +49,8 @@ mod endpoint;
 #[cfg(target_os = "linux")]
 mod epoll;
 mod err;
-mod fd;
 mod fair_queue;
+mod fd;
 mod gather;
 mod generic_mtrie;
 mod i_decoder;
@@ -51,12 +62,15 @@ mod io_object;
 mod io_thread;
 mod ip;
 mod ip_resolver;
+#[cfg(all(feature = "ipc", unix))]
 mod ipc_address;
+#[cfg(all(feature = "ipc", unix))]
 mod ipc_connecter;
+#[cfg(all(feature = "ipc", unix))]
 mod ipc_listener;
 #[cfg(unix)]
 mod kqueue;
-mod lb;
+mod load_balancer;
 mod likely;
 mod macros;
 mod mailbox;
@@ -74,8 +88,11 @@ mod options;
 mod own;
 mod pair;
 mod peer;
+#[cfg(feature = "pgm")]
 mod pgm_receiver;
+#[cfg(feature = "pgm")]
 mod pgm_sender;
+#[cfg(feature = "pgm")]
 mod pgm_socket;
 mod pipe;
 mod plain_client;
@@ -106,6 +123,7 @@ mod session_base;
 mod sha1;
 mod signaler;
 mod sockaddr_storage;
+mod socket;
 mod socket_base;
 mod socket_poller;
 mod socks;
@@ -121,13 +139,17 @@ mod tcp_connecter;
 mod tcp_listener;
 mod thread;
 mod timers;
+#[cfg(all(feature = "tipc", target_os = "linux"))]
 mod tipc_address;
+#[cfg(all(feature = "tipc", target_os = "linux"))]
 mod tipc_connecter;
+#[cfg(all(feature = "tipc", target_os = "linux"))]
 mod tipc_listener;
 mod trie;
 mod types;
 mod udp_address;
 mod udp_engine;
+mod utils;
 mod v1_decoder;
 mod v1_encoder;
 mod v2_decoder;
@@ -157,41 +179,7 @@ mod yqueue;
 mod zap_client;
 mod zmq_draft;
 mod zmq_pub;
-mod zmq_utils;
 mod zmtp_engine;
-
-// Version info
-pub const ZMQ_VERSION_MAJOR: c_int = 4;
-pub const ZMQ_VERSION_MINOR: c_int = 3;
-pub const ZMQ_VERSION_PATCH: c_int = 6;
-
-// Socket types
-pub const ZMQ_PAIR: c_int = 0;
-pub const ZMQ_PUB: c_int = 1;
-pub const ZMQ_SUB: c_int = 2;
-pub const ZMQ_REQ: c_int = 3;
-pub const ZMQ_REP: c_int = 4;
-pub const ZMQ_DEALER: c_int = 5;
-pub const ZMQ_ROUTER: c_int = 6;
-pub const ZMQ_PULL: c_int = 7;
-pub const ZMQ_PUSH: c_int = 8;
-pub const ZMQ_XPUB: c_int = 9;
-pub const ZMQ_XSUB: c_int = 10;
-pub const ZMQ_STREAM: c_int = 11;
-
-// Basic types and structures
-#[repr(C)]
-pub struct zmq_msg_t {
-    field0: [u8; 64], // Internal implementation detail
-}
-
-#[repr(C)]
-pub struct zmq_pollitem_t {
-    pub socket: *mut c_void,
-    pub fd: c_int,
-    pub events: c_short,
-    pub revents: c_short,
-}
 
 // Core API Functions
 #[no_mangle]
@@ -222,7 +210,7 @@ pub extern "C" fn zmq_ctx_term(context: *mut c_void) -> c_int {
     }
 
     unsafe {
-        let ctx = Box::from_raw(context as *mut Context);
+        let mut ctx = Box::from_raw(context as *mut Context);
         match ctx.terminate() {
             Ok(_) => {
                 shutdown_network();
@@ -233,22 +221,6 @@ pub extern "C" fn zmq_ctx_term(context: *mut c_void) -> c_int {
                 -1
             }
         }
-    }
-}
-
-// Helper structures
-struct Context {
-    // Internal context implementation
-}
-
-impl Context {
-    fn new() -> Self {
-        Context {}
-    }
-
-    fn terminate(&self) -> Result<(), i32> {
-        // Implementation
-        Ok(())
     }
 }
 
@@ -268,9 +240,6 @@ fn set_errno(err: i32) {
 
 // Many more functions would need to be implemented...
 // This is just a basic skeleton showing the structure
-
-// Error codes
-const EFAULT: i32 = 14;
 
 // Export the C API
 pub use self::zmq_ctx_new as zmq_init;
